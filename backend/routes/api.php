@@ -49,7 +49,7 @@ Route::prefix('v1')->group(function () {
     Route::middleware('merchant.auth')->group(function () {
         // Payments Engine (with rate limiting and RBAC)
         Route::post('/payments', [PaymentController::class, 'store'])
-            ->middleware(['throttle:60,1', 'role:merchant,admin']);
+            ->middleware(['throttle:payments', 'role:merchant,admin']);
         Route::get('/payments', [PaymentController::class, 'index'])
             ->middleware('role:merchant,admin,auditor,operations');
         Route::get('/payments/{reference}', [PaymentController::class, 'show'])

@@ -62,7 +62,7 @@ class ValidateMerchantApiKey
         }
 
         // 2. Validate prefix format (e.g. tiq_live_sec_... or tiq_test_sec_...)
-        if (!preg_match('/^tiq_(live|test)_(sec|pub)_[a-zA-Z0-9]+$/', $apiKeyString)) {
+        if (!preg_match('/^tiq_(live|test)_(sec|pub)_[a-zA-Z0-9_]+$/', $apiKeyString)) {
             return response()->json([
                 'error' => 'invalid_api_key_format',
                 'message' => 'The provided API key does not conform to the TransactIQ key format.',

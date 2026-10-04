@@ -49,10 +49,21 @@ class IdempotencyService
      *
      * @throws ConflictHttpException if an identical request is actively processing.
      */
-    public function acquireLock(Merchant $merchant, string $key, int $ttlSeconds = 60): Lock
+    public function acquireLock(Merchant $merchant, string $key, int $ttlSeconds = 60, int $waitTimeoutSeconds = 3): Lock
     {
         $lockKey = "idemp_lock:{$merchant->id}:{$key}";
         $lock = Cache::lock($lockKey, $ttlSeconds);
+
+        if ($waitTimeoutSeconds > 0) {
+            try {
+                $lock->block($waitTimeoutSeconds);
+                return $lock;
+            } catch (LockTimeoutException $e) {
+                throw new ConflictHttpException(
+                    'A concurrent transaction with the identical Idempotency-Key is currently processing. Please wait for the initial request to complete.'
+                );
+            }
+        }
 
         // Attempt to acquire lock immediately (no wait to fail fast on concurrent race)
         if (!$lock->get()) {

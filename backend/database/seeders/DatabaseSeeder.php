@@ -115,6 +115,20 @@ class DatabaseSeeder extends Seeder
             ApiKey::createKeyPair($merchant, 'Sandbox Test Key', 'TEST', ['payments:read', 'payments:write']);
         }
 
+        // Seed deterministic test key for k6 stress benchmarking and developer integration
+        ApiKey::firstOrCreate(
+            ['public_key' => 'tiq_test_pub_swiftpay_stress_key'],
+            [
+                'merchant_id' => $merchant->id,
+                'name' => 'Deterministic Benchmark Key',
+                'type' => 'TEST',
+                'secret_key_hash' => hash('sha256', 'tiq_test_sec_swiftpay_stress_key_000000000000'),
+                'secret_key_preview' => 'tiq_...000000',
+                'permissions' => ['payments:read', 'payments:write', 'settlements:write'],
+                'status' => 'ACTIVE',
+            ]
+        );
+
         // 5. Seed Core Chart of Accounts (Double-Entry General Ledger)
         // Platform Revenue Account
         LedgerAccount::firstOrCreate(

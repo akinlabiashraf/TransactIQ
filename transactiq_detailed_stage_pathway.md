@@ -2,8 +2,8 @@
 
 > **Intelligent Payment Processing, Reconciliation & Settlement Platform**  
 > *A Production-Grade Fintech Infrastructure & Financial Operations Engine*  
-> Current Status: **Stages 1 – 10 Completed (100% Green, 53 Tests Passing)**  
-> Roadmap: **Stages 11 – 16 Evolution Pathway**  
+> Current Status: **Stages 1 – 13, 15 – 17 Completed (100% Green, 71 Tests Passing)**  
+> Roadmap: **Stages 14, 18 – 20 Evolution Pathway**  
 > Last Updated: 2026-10-04
 
 ---
@@ -130,11 +130,11 @@ STAGE 16: API Documentation & Developer Experience [COMPLETED ✅]
    ├── [x] 16.3 Curated Postman collection & environment file
    └── [x] 16.4 Merchant integration developer guide & README update
 
-STAGE 17: Load & Concurrency Stress Testing (k6) [P1 - PLANNED 📋]
-   ├── [ ] 17.1 Idempotency stress test script (100 concurrent requests with identical key)
-   ├── [ ] 17.2 Payment throughput benchmark (VUs ramp-up from 1 to 50)
-   ├── [ ] 17.3 Latency percentiles measurement (p50, p95, p99) & error rate (<0.1%)
-   └── [ ] 17.4 Concurrent ledger posting validation (zero drift verification)
+STAGE 17: Load & Concurrency Stress Testing (k6) [COMPLETED ✅]
+   ├── [x] 17.1 Idempotency stress test script (100 concurrent requests with identical key)
+   ├── [x] 17.2 Payment throughput benchmark (VUs ramp-up from 1 to 50)
+   ├── [x] 17.3 Latency percentiles measurement (p50, p95, p99) & error rate (<0.1%)
+   └── [x] 17.4 Concurrent ledger posting validation (zero drift verification)
 
 STAGE 18: Financial Lifecycle Expansion: Refunds, Disputes & Poller [P2 - PLANNED 📋]
    ├── [ ] 18.1 Refunds schema & RefundService (full/partial refunds, ledger reversals)
@@ -164,11 +164,11 @@ STAGE 20: Final Portfolio & Institutional Case Study [P1 - PLANNED 📋]
 | 2026-10-04 | Stages 1 – 10 | Completed foundational platform (Core, FSM, Ledger, Settlements, Reconciliation, Security) | 53/53 PASSED (376 assertions) |
 | 2026-10-04 | Stage 11 | Security Hardening, Institutional RBAC & User Session Auth | 60/60 PASSED (407 assertions) ✅ |
 | 2026-10-04 | Stage 12 | Docker Containerization (Local & Cloud-Ready) | Configured 6-service stack & guide ✅ |
-| *Pending* | Stage 13 | CI/CD Pipeline with GitHub Actions | *Scheduled (P0)* |
-| *Pending* | Stage 14 | AWS Free-Tier Deployment Walkthrough | *Scheduled (P1)* |
-| *Pending* | Stage 15 | Observability, Monitoring & Live UI Wiring | *Scheduled (P1)* |
-| *Pending* | Stage 16 | API Documentation & Developer Experience (OpenAPI / Swagger) | *Scheduled (P1)* |
-| *Pending* | Stage 17 | Load & Concurrency Stress Testing (k6) | *Scheduled (P1)* |
+| 2026-10-04 | Stage 13 | CI/CD Pipeline with GitHub Actions | Verified in GitHub Cloud (Run #2) ✅ |
+| *Paused* | Stage 14 | AWS Free-Tier Deployment Walkthrough | *Paused for USD Virtual Card* |
+| 2026-10-04 | Stage 15 | Observability, Monitoring & Live UI Wiring | 66/66 PASSED (454 assertions) ✅ |
+| 2026-10-04 | Stage 16 | API Documentation & Developer Experience (OpenAPI / Scalar UI) | 68/68 PASSED (469 assertions) ✅ |
+| 2026-10-04 | Stage 17 | Load & Concurrency Stress Testing (k6 & Node runner) | 71/71 PASSED (497 assertions) ✅ |
 | *Pending* | Stage 18 | Financial Lifecycle Expansion: Refunds, Disputes & Poller | *Scheduled (P2)* |
 | *Pending* | Stage 19 | Real Payment Sandbox & ML Fraud Detection (Python + FastAPI) | *Scheduled (P2)* |
 | *Pending* | Stage 20 | Final Portfolio & Institutional Case Study | *Scheduled (P1)* |
