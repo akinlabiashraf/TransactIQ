@@ -271,12 +271,13 @@ export function App() {
               transactions={transactions}
               onNavigate={setCurrentSection}
               onTriggerTestPayment={() => setCurrentSection('sandbox')}
+              apiKey={activeApiKey}
             />
           )}
 
           {currentSection === 'transactions' && (
             <TransactionsView 
-              transactions={transactions}
+              apiKey={activeApiKey}
               onOpenSandbox={() => setCurrentSection('sandbox')}
             />
           )}
@@ -299,6 +300,7 @@ export function App() {
           {currentSection === 'webhooks' && (
             <WebhooksView 
               webhooks={webhooks}
+              apiKey={activeApiKey}
             />
           )}
 

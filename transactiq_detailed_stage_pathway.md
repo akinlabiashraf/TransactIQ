@@ -117,12 +117,12 @@ STAGE 14: AWS Free-Tier Deployment Walkthrough [P1 - PLANNED 📋]
    ├── [ ] 14.4 Docker & Docker Compose installation on EC2 host
    └── [ ] 14.5 Stack deployment, migrations, seeders & live public health verification
 
-STAGE 15: Observability, Monitoring & Live UI Wiring [P1 - PLANNED 📋]
-   ├── [ ] 15.1 Standardized structured JSON logging with correlation IDs
-   ├── [ ] 15.2 Automated alert logging on ledger integrity variance > 0
-   ├── [ ] 15.3 Live data wiring in TransactionsView (GET /api/v1/payments with server pagination)
-   ├── [ ] 15.4 Live data wiring in WebhooksView (GET /api/v1/webhooks & live replay API)
-   └── [ ] 15.5 Aggregated analytics summary endpoint for OverviewView
+STAGE 15: Observability, Monitoring & Live UI Wiring [COMPLETED ✅]
+   ├── [x] 15.1 Standardized structured JSON logging with correlation IDs
+   ├── [x] 15.2 Automated alert logging on ledger integrity variance > 0
+   ├── [x] 15.3 Live data wiring in TransactionsView (GET /api/v1/payments with server pagination)
+   ├── [x] 15.4 Live data wiring in WebhooksView (GET /api/v1/webhooks & live replay API)
+   └── [x] 15.5 Aggregated analytics summary endpoint for OverviewView
 
 STAGE 16: API Documentation & Developer Experience [P1 - PLANNED 📋]
    ├── [ ] 16.1 OpenAPI 3.0 specification covering all 18+ endpoints

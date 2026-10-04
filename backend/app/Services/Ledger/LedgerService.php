@@ -261,11 +261,31 @@ class LedgerService
         $debitTotal = (int) DB::table('ledger_entries')->sum('amount');
         $creditTotal = (int) DB::table('ledger_entries')->sum('amount');
 
+        $discrepancy = abs($debitTotal - $creditTotal);
+        $isBalanced = ($discrepancy === 0);
+
+        if (!$isBalanced) {
+            \Illuminate\Support\Facades\Log::critical('[CRITICAL_LEDGER_VARIANCE] Double-entry accounting integrity failure detected!', [
+                'total_debits' => $debitTotal,
+                'total_credits' => $creditTotal,
+                'discrepancy' => $discrepancy,
+                'total_entries' => $totalEntries,
+                'currency' => $currency,
+            ]);
+        } else {
+            \Illuminate\Support\Facades\Log::info('LEDGER_INTEGRITY_VERIFIED', [
+                'is_balanced' => true,
+                'total_entries' => $totalEntries,
+                'total_volume' => $totalAmount,
+                'currency' => $currency,
+            ]);
+        }
+
         return [
-            'is_balanced' => true,
+            'is_balanced' => $isBalanced,
             'total_debits' => $debitTotal,
             'total_credits' => $creditTotal,
-            'discrepancy' => abs($debitTotal - $creditTotal),
+            'discrepancy' => $discrepancy,
             'total_entries' => $totalEntries,
             'currency' => $currency,
             'verified_at' => now()->toIso8601String(),

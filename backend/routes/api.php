@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AnalyticsController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\LedgerController;
@@ -104,6 +105,10 @@ Route::prefix('v1')->group(function () {
             ->middleware('role:admin,operations,merchant');
         Route::get('/security/roles-and-users', [SecurityController::class, 'rolesAndUsers'])
             ->middleware('role:admin,auditor,operations');
+
+        // Operational Analytics & Overview Summary (Stage 15)
+        Route::get('/analytics/summary', [AnalyticsController::class, 'summary'])
+            ->middleware('role:admin,operations,auditor,merchant');
     });
 });
 

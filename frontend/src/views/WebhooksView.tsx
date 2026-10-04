@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Webhook, 
   Shield, 
-  RotateCw, 
+  RotateCw,
   Eye, 
   Check, 
   Copy, 
@@ -10,13 +10,18 @@ import {
   CheckCircle2, 
   Clock 
 } from 'lucide-react';
+import { apiService } from '../services/api';
 import type { WebhookItem } from '../types';
 
 interface WebhooksViewProps {
-  webhooks: WebhookItem[];
+  webhooks?: WebhookItem[];
+  apiKey?: string;
 }
 
-export const WebhooksView: React.FC<WebhooksViewProps> = ({ webhooks: initialWebhooks }) => {
+export const WebhooksView: React.FC<WebhooksViewProps> = ({ 
+  webhooks: initialWebhooks = [], 
+  apiKey = 'tiq_live_swiftpay_test_key_001' 
+}) => {
   const [webhooksList, setWebhooksList] = useState<WebhookItem[]>(initialWebhooks);
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'DELIVERED' | 'RETRYING' | 'FAILED' | 'PENDING'>('ALL');
   const [selectedWebhook, setSelectedWebhook] = useState<WebhookItem | null>(null);
@@ -24,10 +29,26 @@ export const WebhooksView: React.FC<WebhooksViewProps> = ({ webhooks: initialWeb
   const [isReplaying, setIsReplaying] = useState(false);
   const [replayNotice, setReplayNotice] = useState<string | null>(null);
 
-  // Keep synced if parent props change
-  React.useEffect(() => {
-    setWebhooksList(initialWebhooks);
-  }, [initialWebhooks]);
+  // Fetch live webhooks from API
+  const fetchWebhooks = useCallback(async () => {
+    try {
+      const data = await apiService.getWebhooks(apiKey, statusFilter);
+      if (data && data.length > 0) {
+        setWebhooksList(data);
+      } else if (initialWebhooks.length > 0) {
+        setWebhooksList(initialWebhooks);
+      }
+    } catch (err: any) {
+      console.warn('Live webhooks fetch failed, falling back to cached state:', err);
+      if (initialWebhooks.length > 0) {
+        setWebhooksList(initialWebhooks);
+      }
+    }
+  }, [apiKey, statusFilter, initialWebhooks]);
+
+  useEffect(() => {
+    fetchWebhooks();
+  }, [fetchWebhooks]);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -40,29 +61,35 @@ export const WebhooksView: React.FC<WebhooksViewProps> = ({ webhooks: initialWeb
     setReplayNotice(null);
 
     try {
-      // Direct optimistic update + API trigger
+      // 1. Call real backend replay endpoint
+      const response = await apiService.replayWebhook(apiKey, webhookId);
+
+      // 2. Update local state with real returned data or optimistic fallback
       const updatedList = webhooksList.map(w => {
         if (w.id === webhookId) {
           return {
             ...w,
             status: 'DELIVERED' as const,
             attempts: w.attempts + 1,
-            response_status: 200,
-            response_body: '{"status":"replayed_successfully","code":200}',
+            response_status: response?.response_status || 200,
+            response_body: response?.response_body || '{"status":"replayed_successfully","code":200}',
             delivered_at: new Date().toISOString(),
           };
         }
         return w;
       });
 
-      await new Promise(r => setTimeout(r, 450));
       setWebhooksList(updatedList);
       
       if (selectedWebhook && selectedWebhook.id === webhookId) {
         setSelectedWebhook(updatedList.find(w => w.id === webhookId) || null);
       }
 
-      setReplayNotice(`Webhook [${webhookId.slice(0, 8)}...] successfully replayed and delivered (200 OK)!`);
+      setReplayNotice(`Webhook [${webhookId.slice(0, 8)}...] successfully queued for replay!`);
+      setTimeout(() => setReplayNotice(null), 4000);
+    } catch (err: any) {
+      console.error('Replay failed:', err);
+      setReplayNotice(`Replay failed: ${err.message || 'Unknown error'}`);
       setTimeout(() => setReplayNotice(null), 4000);
     } finally {
       setIsReplaying(false);

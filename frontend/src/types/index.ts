@@ -276,3 +276,47 @@ export interface LoginResponse {
   };
 }
 
+export interface PaginationMeta {
+  current_page: number;
+  per_page: number;
+  total: number;
+  last_page: number;
+}
+
+export interface AnalyticsSummary {
+  overview: {
+    cleared_volume: number;
+    fee_revenue: number;
+    net_payout_volume: number;
+    currency: string;
+    total_transactions: number;
+    successful_transactions: number;
+    failed_transactions: number;
+    pending_transactions: number;
+    success_rate: number;
+  };
+  settlements: {
+    pending_volume: number;
+    completed_batches: number;
+  };
+  ledger_health: {
+    is_balanced: boolean;
+    total_debits: number;
+    total_credits: number;
+    net_variance: number;
+    total_entries: number;
+  };
+  recent_transactions: {
+    id: string;
+    reference: string;
+    amount: number;
+    fee_amount: number;
+    net_amount: number;
+    currency: string;
+    status: string;
+    payment_method: string;
+    customer_email: string;
+    created_at: string;
+  }[];
+}
+

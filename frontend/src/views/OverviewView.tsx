@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, 
   CheckCircle2, 
@@ -11,27 +11,56 @@ import {
 } from 'lucide-react';
 import { apiService } from '../services/api';
 import type { NavSection } from '../components/Sidebar';
-import type { Transaction } from '../types';
+import type { Transaction, AnalyticsSummary } from '../types';
 
 interface OverviewViewProps {
   transactions: Transaction[];
   onNavigate: (section: NavSection) => void;
   onTriggerTestPayment: () => void;
+  apiKey?: string;
 }
 
 export const OverviewView: React.FC<OverviewViewProps> = ({
   transactions,
   onNavigate,
   onTriggerTestPayment,
+  apiKey = 'tiq_live_swiftpay_test_key_001',
 }) => {
-  const totalVolume = transactions
+  const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    apiService.getAnalyticsSummary(apiKey)
+      .then(data => {
+        if (isMounted) setSummary(data);
+      })
+      .catch(err => {
+        console.warn('Analytics summary fetch failed, using local prop calculations:', err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [apiKey]);
+
+  const fallbackVolume = transactions
     .filter(t => t.status === 'SUCCESS')
     .reduce((acc, t) => acc + t.amount, 0);
 
-  const totalSuccess = transactions.filter(t => t.status === 'SUCCESS').length;
-  const successRate = transactions.length > 0 
-    ? Math.round((totalSuccess / transactions.length) * 100) 
+  const fallbackSuccessCount = transactions.filter(t => t.status === 'SUCCESS').length;
+  const fallbackSuccessRate = transactions.length > 0 
+    ? Math.round((fallbackSuccessCount / transactions.length) * 100) 
     : 100;
+
+  const totalVolume = summary?.overview.cleared_volume ?? fallbackVolume;
+  const successRate = summary?.overview.success_rate ?? fallbackSuccessRate;
+  const totalTransactionsCount = summary?.overview.total_transactions ?? transactions.length;
+  const successfulTransactionsCount = summary?.overview.successful_transactions ?? fallbackSuccessCount;
+  const isLedgerBalanced = summary?.ledger_health.is_balanced ?? true;
+
+  const displayTransactions = (summary?.recent_transactions && summary.recent_transactions.length > 0)
+    ? summary.recent_transactions
+    : transactions.slice(0, 5);
 
   return (
     <div className="animate-fade-in" style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -113,7 +142,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             {successRate}%
           </div>
           <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '8px' }}>
-            {totalSuccess} of {transactions.length} payments captured
+            {successfulTransactionsCount} of {totalTransactionsCount} payments captured
           </div>
         </div>
 
@@ -130,8 +159,8 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           <div style={{ fontSize: '28px', fontWeight: 800, color: '#fff', marginTop: '12px', fontFamily: 'var(--font-mono)' }}>
             {apiService.formatMoney(totalVolume)}
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--info)', marginTop: '8px' }}>
-            Debits = Credits Invariant: Balanced
+          <div style={{ fontSize: '12px', color: isLedgerBalanced ? 'var(--info)' : 'var(--danger)', marginTop: '8px' }}>
+            Debits = Credits Invariant: {isLedgerBalanced ? 'Balanced (Zero Variance)' : 'Discrepancy Alert'}
           </div>
         </div>
 
@@ -256,7 +285,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             </tr>
           </thead>
           <tbody>
-            {transactions.slice(0, 5).map((t) => (
+            {displayTransactions.map((t: any) => (
               <tr key={t.id}>
                 <td className="mono" style={{ fontWeight: 600, color: '#fff' }}>
                   {t.reference}

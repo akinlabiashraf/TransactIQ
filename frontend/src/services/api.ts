@@ -13,6 +13,9 @@ import type {
   RiskSimulationResult,
   AuthUser,
   LoginResponse,
+  Transaction,
+  PaginationMeta,
+  AnalyticsSummary,
 } from '../types';
 
 const API_BASE = '/api/v1';
@@ -87,6 +90,97 @@ export const apiService = {
     const isReplayed = response.headers.get('X-Idempotent-Replay') === 'true';
     const json = await response.json();
     return { ...json, replayed: isReplayed };
+  },
+
+  /**
+   * Fetch paginated transactions from backend with optional status filtering
+   */
+  async getTransactions(
+    apiKey: string,
+    page = 1,
+    perPage = 20,
+    status?: string
+  ): Promise<{ data: Transaction[]; pagination: PaginationMeta }> {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('per_page', String(perPage));
+    if (status && status !== 'ALL') {
+      params.append('status', status);
+    }
+
+    const response = await fetch(`${API_BASE}/payments?${params.toString()}`, {
+      headers: {
+        'Accept': 'application/json',
+        'X-Api-Key': apiKey,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to load transactions: HTTP ${response.status}`);
+    }
+
+    const json = await response.json();
+    return {
+      data: (json.data || []).map((t: any) => ({
+        id: t.id,
+        reference: t.reference,
+        merchant_id: t.merchant_id || '',
+        customer_email: t.customer?.email || 'N/A',
+        amount: t.amount,
+        fee_amount: t.fee_amount,
+        net_amount: t.net_amount,
+        currency: t.currency,
+        status: t.status,
+        payment_method: t.payment_method,
+        idempotency_key: t.idempotency_key,
+        provider: t.provider || 'SIMULATED_GATEWAY',
+        created_at: t.created_at,
+      })),
+      pagination: json.pagination || {
+        current_page: page,
+        per_page: perPage,
+        total: (json.data || []).length,
+        last_page: 1,
+      },
+    };
+  },
+
+  /**
+   * Fetch full details of a transaction including event timeline and gateway attempts
+   */
+  async getTransactionDetails(apiKey: string, reference: string): Promise<any> {
+    const response = await fetch(`${API_BASE}/payments/${encodeURIComponent(reference)}`, {
+      headers: {
+        'Accept': 'application/json',
+        'X-Api-Key': apiKey,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to load transaction details: HTTP ${response.status}`);
+    }
+
+    const json = await response.json();
+    return json.data;
+  },
+
+  /**
+   * Fetch aggregated operational analytics summary and ledger health
+   */
+  async getAnalyticsSummary(apiKey: string): Promise<AnalyticsSummary> {
+    const response = await fetch(`${API_BASE}/analytics/summary`, {
+      headers: {
+        'Accept': 'application/json',
+        'X-Api-Key': apiKey,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to load analytics summary: HTTP ${response.status}`);
+    }
+
+    const json = await response.json();
+    return json.data;
   },
 
   /**
