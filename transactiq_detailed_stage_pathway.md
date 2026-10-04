@@ -124,11 +124,11 @@ STAGE 15: Observability, Monitoring & Live UI Wiring [COMPLETED ✅]
    ├── [x] 15.4 Live data wiring in WebhooksView (GET /api/v1/webhooks & live replay API)
    └── [x] 15.5 Aggregated analytics summary endpoint for OverviewView
 
-STAGE 16: API Documentation & Developer Experience [P1 - PLANNED 📋]
-   ├── [ ] 16.1 OpenAPI 3.0 specification covering all 18+ endpoints
-   ├── [ ] 16.2 Interactive Swagger UI / Scalar documentation at /docs
-   ├── [ ] 16.3 Curated Postman collection & environment file
-   └── [ ] 16.4 Merchant integration developer guide & README update
+STAGE 16: API Documentation & Developer Experience [COMPLETED ✅]
+   ├── [x] 16.1 OpenAPI 3.0 specification covering all 18+ endpoints
+   ├── [x] 16.2 Interactive Swagger UI / Scalar documentation at /docs
+   ├── [x] 16.3 Curated Postman collection & environment file
+   └── [x] 16.4 Merchant integration developer guide & README update
 
 STAGE 17: Load & Concurrency Stress Testing (k6) [P1 - PLANNED 📋]
    ├── [ ] 17.1 Idempotency stress test script (100 concurrent requests with identical key)

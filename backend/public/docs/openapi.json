@@ -1,0 +1,511 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "TransactIQ Core Infrastructure API",
+    "version": "1.0.0",
+    "description": "Production-grade digital payment processing, double-entry general ledger, automated reconciliation, and webhook dispatching infrastructure.",
+    "contact": {
+      "name": "TransactIQ Engineering",
+      "email": "engineering@transactiq.io",
+      "url": "https://github.com/akinlabiashraf/TransactIQ"
+    },
+    "license": {
+      "name": "Proprietary Financial Infrastructure"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000/api/v1",
+      "description": "Local Development / Docker Gateway"
+    },
+    {
+      "url": "https://api.transactiq.io/api/v1",
+      "description": "Production Cloud Gateway"
+    }
+  ],
+  "tags": [
+    { "name": "System Health", "description": "Infrastructure status and service connectivity" },
+    { "name": "Authentication", "description": "Platform user login, logout, and token management" },
+    { "name": "Payments & Transactions", "description": "Idempotent payment initiation, state machine, and timeline inspection" },
+    { "name": "Webhooks", "description": "Cryptographically signed event delivery and replay" },
+    { "name": "Double-Entry Ledger", "description": "Chart of accounts, journal entries, and mathematical zero-drift audit" },
+    { "name": "Settlements", "description": "T+1 payout batching, gross-to-net fee deductions, and wire disbursement" },
+    { "name": "Reconciliation", "description": "Multi-source automated clearing file matcher and discrepancy triage" },
+    { "name": "Security & Audit", "description": "Tamper-evident chained audit trails, risk scoring, and RBAC matrix" },
+    { "name": "Operational Analytics", "description": "Aggregated metrics, volume analytics, and platform telemetry" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Api-Key",
+        "description": "Merchant API Key (e.g. `tiq_live_swiftpay_test_key_001`)"
+      },
+      "SanctumAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Sanctum Token",
+        "description": "Platform User Sanctum Bearer Token from `/auth/login`"
+      }
+    },
+    "schemas": {
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "platform": { "type": "string", "example": "TransactIQ Core Infrastructure" },
+          "version": { "type": "string", "example": "1.0.0" },
+          "status": { "type": "string", "enum": ["healthy", "degraded", "down"], "example": "healthy" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "total_latency_ms": { "type": "number", "example": 2.45 },
+          "services": {
+            "type": "object",
+            "properties": {
+              "database": {
+                "type": "object",
+                "properties": {
+                  "status": { "type": "string", "example": "connected" },
+                  "engine": { "type": "string", "example": "PostgreSQL" },
+                  "latency_ms": { "type": "number", "example": 1.2 }
+                }
+              },
+              "redis": {
+                "type": "object",
+                "properties": {
+                  "status": { "type": "string", "example": "connected" },
+                  "latency_ms": { "type": "number", "example": 0.8 }
+                }
+              }
+            }
+          }
+        }
+      },
+      "PaymentRequest": {
+        "type": "object",
+        "required": ["amount", "currency", "payment_method", "customer"],
+        "properties": {
+          "amount": { "type": "integer", "description": "Amount in minor currency units (e.g., 500000 = ₦5,000.00)", "example": 500000 },
+          "currency": { "type": "string", "enum": ["NGN", "USD", "EUR", "GBP"], "example": "NGN" },
+          "payment_method": { "type": "string", "enum": ["CARD", "BANK_TRANSFER", "USSD"], "example": "CARD" },
+          "customer": {
+            "type": "object",
+            "required": ["email"],
+            "properties": {
+              "email": { "type": "string", "format": "email", "example": "customer@example.com" },
+              "name": { "type": "string", "example": "Amina Bello" },
+              "phone": { "type": "string", "example": "+2348012345678" }
+            }
+          },
+          "card": {
+            "type": "object",
+            "properties": {
+              "number": { "type": "string", "example": "4084080000000000" },
+              "exp_month": { "type": "string", "example": "12" },
+              "exp_year": { "type": "string", "example": "28" },
+              "cvv": { "type": "string", "example": "123" }
+            }
+          },
+          "gateway_simulation": {
+            "type": "string",
+            "description": "Simulation response override for sandbox testing",
+            "enum": ["AUTO", "00", "51", "33", "91", "02", "504"],
+            "example": "00"
+          },
+          "metadata": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "Transaction": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "reference": { "type": "string", "example": "TXN-20260921-100201" },
+          "amount": { "type": "integer", "example": 5000000 },
+          "fee_amount": { "type": "integer", "example": 75000 },
+          "net_amount": { "type": "integer", "example": 4925000 },
+          "currency": { "type": "string", "example": "NGN" },
+          "status": { "type": "string", "enum": ["INITIATED", "PROCESSING", "SUCCESS", "FAILED", "PENDING"], "example": "SUCCESS" },
+          "payment_method": { "type": "string", "example": "CARD" },
+          "idempotency_key": { "type": "string", "example": "idemp-uuid-sample-1234" },
+          "provider": { "type": "string", "example": "SIMULATED_GATEWAY" },
+          "provider_reference": { "type": "string", "example": "GW-99482716" },
+          "paid_at": { "type": "string", "format": "date-time" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "LedgerIntegrity": {
+        "type": "object",
+        "properties": {
+          "is_balanced": { "type": "boolean", "example": true },
+          "total_debits": { "type": "integer", "example": 17000000 },
+          "total_credits": { "type": "integer", "example": 17000000 },
+          "discrepancy": { "type": "integer", "example": 0 },
+          "total_entries": { "type": "integer", "example": 4 },
+          "currency": { "type": "string", "example": "NGN" },
+          "verified_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "AnalyticsSummary": {
+        "type": "object",
+        "properties": {
+          "overview": {
+            "type": "object",
+            "properties": {
+              "cleared_volume": { "type": "integer", "example": 17000000 },
+              "fee_revenue": { "type": "integer", "example": 255000 },
+              "net_payout_volume": { "type": "integer", "example": 16745000 },
+              "total_transactions": { "type": "integer", "example": 2 },
+              "successful_transactions": { "type": "integer", "example": 2 },
+              "failed_transactions": { "type": "integer", "example": 0 },
+              "success_rate": { "type": "number", "example": 100.0 }
+            }
+          },
+          "ledger_health": {
+            "$ref": "#/components/schemas/LedgerIntegrity"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["System Health"],
+        "summary": "Infrastructure & Service Connectivity Check",
+        "description": "Returns operational telemetry for PostgreSQL 16 database and Redis 7 in-memory cache.",
+        "responses": {
+          "200": {
+            "description": "All infrastructure components operational",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HealthResponse" }
+              }
+            }
+          },
+          "503": {
+            "description": "Infrastructure degraded or unreachable"
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Platform User Authentication",
+        "description": "Authenticates a platform user and returns a Laravel Sanctum Bearer token along with their institutional RBAC role.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "example": "admin@transactiq.io" },
+                  "password": { "type": "string", "format": "password", "example": "Password123!" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Authentication successful" },
+          "401": { "description": "Invalid credentials" },
+          "422": { "description": "Validation failure" }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Invalidate Active Session Token",
+        "security": [{ "SanctumAuth": [] }],
+        "responses": {
+          "200": { "description": "Session revoked" },
+          "401": { "description": "Unauthenticated" }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "Retrieve Authenticated User Context",
+        "security": [{ "SanctumAuth": [] }],
+        "responses": {
+          "200": { "description": "Current user profile and permissions" }
+        }
+      }
+    },
+    "/payments": {
+      "post": {
+        "tags": ["Payments & Transactions"],
+        "summary": "Initiate Idempotent Payment Transaction",
+        "description": "Processes a payment through the finite state machine with Redis distributed mutex locking (`SET NX EX 10`) and SHA-256 payload tampering verification.",
+        "security": [{ "ApiKeyAuth": [] }, { "SanctumAuth": [] }],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string", "example": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d" },
+            "description": "Unique client-generated UUIDv4 preventing duplicate financial charges"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PaymentRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Payment successfully initiated and processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "success" },
+                    "data": { "$ref": "#/components/schemas/Transaction" }
+                  }
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Idempotent request replayed. Returns original transaction without re-charging.",
+            "headers": {
+              "X-Idempotent-Replay": { "schema": { "type": "string", "example": "true" } }
+            }
+          },
+          "422": {
+            "description": "Validation error or Idempotency payload tampering mismatch"
+          },
+          "429": {
+            "description": "Rate limit exceeded (60 requests/minute)"
+          }
+        }
+      },
+      "get": {
+        "tags": ["Payments & Transactions"],
+        "summary": "List Paginated Transactions",
+        "description": "Retrieves transactions with server-side pagination, status filtering, and customer metadata.",
+        "security": [{ "ApiKeyAuth": [] }, { "SanctumAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "per_page", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["SUCCESS", "FAILED", "PENDING", "PROCESSING"] } }
+        ],
+        "responses": {
+          "200": { "description": "Paginated transaction list" }
+        }
+      }
+    },
+    "/payments/{reference}": {
+      "get": {
+        "tags": ["Payments & Transactions"],
+        "summary": "Inspect Transaction State Machine & Attempt Logs",
+        "description": "Retrieves the full lifecycle audit timeline of a transaction including state transitions and gateway provider attempts.",
+        "security": [{ "ApiKeyAuth": [] }, { "SanctumAuth": [] }],
+        "parameters": [
+          { "name": "reference", "in": "path", "required": true, "schema": { "type": "string", "example": "TXN-20260921-100201" } }
+        ],
+        "responses": {
+          "200": { "description": "Complete transaction audit history" },
+          "404": { "description": "Transaction reference not found" }
+        }
+      }
+    },
+    "/webhooks": {
+      "get": {
+        "tags": ["Webhooks"],
+        "summary": "List Outbound Webhook Deliveries",
+        "description": "Lists webhook dispatch events with HMAC signatures, HTTP response codes, and retry counts.",
+        "security": [{ "ApiKeyAuth": [] }, { "SanctumAuth": [] }],
+        "responses": {
+          "200": { "description": "Webhook delivery list" }
+        }
+      }
+    },
+    "/webhooks/{id}/replay": {
+      "post": {
+        "tags": ["Webhooks"],
+        "summary": "Manually Replay Webhook Delivery",
+        "description": "Immediately queues an existing webhook delivery for redelivery to the merchant endpoint.",
+        "security": [{ "ApiKeyAuth": [] }, { "SanctumAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Webhook queued for immediate replay" }
+        }
+      }
+    },
+    "/ledger/accounts": {
+      "get": {
+        "tags": ["Double-Entry Ledger"],
+        "summary": "Chart of Accounts",
+        "description": "Returns platform and merchant ledger accounts with real-time debit/credit balances.",
+        "security": [{ "ApiKeyAuth": [] }, { "SanctumAuth": [] }],
+        "responses": {
+          "200": { "description": "Chart of accounts" }
+        }
+      }
+    },
+    "/ledger/entries": {
+      "get": {
+        "tags": ["Double-Entry Ledger"],
+        "summary": "Journal Entries",
+        "description": "Lists balanced double-entry accounting records satisfying sum(Debits) == sum(Credits).",
+        "security": [{ "ApiKeyAuth": [] }, { "SanctumAuth": [] }],
+        "responses": {
+          "200": { "description": "Journal entries list" }
+        }
+      }
+    },
+    "/ledger/integrity": {
+      "get": {
+        "tags": ["Double-Entry Ledger"],
+        "summary": "Ledger Zero-Drift Audit",
+        "description": "Programmatically verifies that total debited volume matches total credited volume with 0 variance.",
+        "security": [{ "ApiKeyAuth": [] }, { "SanctumAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Integrity audit report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "success" },
+                    "data": { "$ref": "#/components/schemas/LedgerIntegrity" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/settlements": {
+      "get": {
+        "tags": ["Settlements"],
+        "summary": "List Settlement Batches",
+        "security": [{ "ApiKeyAuth": [] }, { "SanctumAuth": [] }],
+        "responses": {
+          "200": { "description": "Settlement batches list" }
+        }
+      }
+    },
+    "/settlements/generate": {
+      "post": {
+        "tags": ["Settlements"],
+        "summary": "Trigger T+1 Settlement Batch Generation",
+        "description": "Aggregates captured transactions, calculates fee deductions, and locks net payout in escrow.",
+        "security": [{ "ApiKeyAuth": [] }, { "SanctumAuth": [] }],
+        "responses": {
+          "200": { "description": "Settlement batch created" }
+        }
+      }
+    },
+    "/settlements/{id}/complete": {
+      "post": {
+        "tags": ["Settlements"],
+        "summary": "Complete Settlement Payout",
+        "description": "Marks settlement fulfilled and posts escrow-clearing entries in the general ledger.",
+        "security": [{ "ApiKeyAuth": [] }, { "SanctumAuth": [] }],
+        "responses": {
+          "200": { "description": "Settlement payout fulfilled" }
+        }
+      }
+    },
+    "/reconciliation/runs": {
+      "get": {
+        "tags": ["Reconciliation"],
+        "summary": "List Reconciliation Clearing Runs",
+        "security": [{ "ApiKeyAuth": [] }, { "SanctumAuth": [] }],
+        "responses": {
+          "200": { "description": "Reconciliation runs" }
+        }
+      }
+    },
+    "/reconciliation/process": {
+      "post": {
+        "tags": ["Reconciliation"],
+        "summary": "Process Clearing File Reconciliation",
+        "description": "Uploads and matches gateway clearing records (CSV/JSON) against internal ledger transactions.",
+        "security": [{ "ApiKeyAuth": [] }, { "SanctumAuth": [] }],
+        "responses": {
+          "200": { "description": "Reconciliation complete" }
+        }
+      }
+    },
+    "/security/audit-logs": {
+      "get": {
+        "tags": ["Security & Audit"],
+        "summary": "Query Chained Audit Logs",
+        "description": "Retrieves immutable administrative logs protected by SHA-256 cryptographic chaining.",
+        "security": [{ "ApiKeyAuth": [] }, { "SanctumAuth": [] }],
+        "responses": {
+          "200": { "description": "Audit log entries" }
+        }
+      }
+    },
+    "/security/audit-logs/verify-chain": {
+      "get": {
+        "tags": ["Security & Audit"],
+        "summary": "Verify Audit Trail Cryptographic Chain",
+        "description": "Recalculates cryptographic hashes from genesis to head, verifying zero tampering.",
+        "security": [{ "ApiKeyAuth": [] }, { "SanctumAuth": [] }],
+        "responses": {
+          "200": { "description": "Audit chain verification result" }
+        }
+      }
+    },
+    "/security/risk-metrics": {
+      "get": {
+        "tags": ["Security & Audit"],
+        "summary": "Real-Time Payment Risk Telemetry",
+        "security": [{ "ApiKeyAuth": [] }, { "SanctumAuth": [] }],
+        "responses": {
+          "200": { "description": "Risk engine rules and statistics" }
+        }
+      }
+    },
+    "/security/roles-and-users": {
+      "get": {
+        "tags": ["Security & Audit"],
+        "summary": "Institutional RBAC Policy Matrix",
+        "security": [{ "ApiKeyAuth": [] }, { "SanctumAuth": [] }],
+        "responses": {
+          "200": { "description": "Roles, permissions, and assigned personas" }
+        }
+      }
+    },
+    "/analytics/summary": {
+      "get": {
+        "tags": ["Operational Analytics"],
+        "summary": "Real-Time Operational Financial Analytics",
+        "description": "Calculates platform cleared volume, fee revenue, net payout, and ledger health metrics.",
+        "security": [{ "ApiKeyAuth": [] }, { "SanctumAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Aggregated analytics summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "success" },
+                    "data": { "$ref": "#/components/schemas/AnalyticsSummary" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

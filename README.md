@@ -7,7 +7,8 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org)
 [![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com)
-[![Tests](https://img.shields.io/badge/Tests-60%2F60%20Passed-brightgreen?style=for-the-badge)](tests)
+[![OpenAPI](https://img.shields.io/badge/OpenAPI-3.0-6BA539?style=for-the-badge&logo=openapiinitiative&logoColor=white)](docs)
+[![Tests](https://img.shields.io/badge/Tests-68%2F68%20Passed-brightgreen?style=for-the-badge)](tests)
 
 > **TransactIQ** is an institutional-grade financial infrastructure and payment operations platform engineered to solve core digital payment challenges: duplicate charges, ambiguous transaction states, zero-drift double-entry ledger accounting, automated multi-source reconciliation, T+1 settlement batching, immutable chained audit trails, and payment fraud defense.
 

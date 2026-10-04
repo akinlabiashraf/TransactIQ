@@ -1,0 +1,225 @@
+{
+  "info": {
+    "name": "TransactIQ Core Infrastructure API",
+    "description": "Production Postman Collection for TransactIQ Payment Processing, General Ledger & Settlement Platform.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000/api/v1", "type": "string" },
+    { "key": "api_key", "value": "tiq_live_swiftpay_test_key_001", "type": "string" },
+    { "key": "auth_token", "value": "", "type": "string" },
+    { "key": "last_txn_reference", "value": "TXN-20260921-100201", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "1. System Health",
+      "item": [
+        {
+          "name": "Check Infrastructure Telemetry",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/health", "host": ["{{base_url}}"], "path": ["health"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Authentication (Sanctum RBAC)",
+      "item": [
+        {
+          "name": "Platform User Login (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.token) {",
+                  "    pm.collectionVariables.set('auth_token', json.data.token);",
+                  "    console.log('Saved auth_token to collection variables');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"admin@transactiq.io\",\n    \"password\": \"Password123!\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Get Authenticated Profile (/auth/me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/auth/me", "host": ["{{base_url}}"], "path": ["auth", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Payments & Transactions",
+      "item": [
+        {
+          "name": "Initiate Card Payment (Idempotent)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.variables.set('req_idempotency_key', 'idemp-' + pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.reference) {",
+                  "    pm.collectionVariables.set('last_txn_reference', json.data.reference);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-Api-Key", "value": "{{api_key}}" },
+              { "key": "Idempotency-Key", "value": "{{req_idempotency_key}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"amount\": 500000,\n    \"currency\": \"NGN\",\n    \"payment_method\": \"CARD\",\n    \"customer\": {\n        \"email\": \"jane.doe@example.com\",\n        \"name\": \"Jane Doe\"\n    },\n    \"card\": {\n        \"number\": \"4084080000000000\",\n        \"exp_month\": \"12\",\n        \"exp_year\": \"28\",\n        \"cvv\": \"123\"\n    },\n    \"gateway_simulation\": \"00\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/payments", "host": ["{{base_url}}"], "path": ["payments"] }
+          }
+        },
+        {
+          "name": "List Paginated Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Api-Key", "value": "{{api_key}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments?page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["payments"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Inspect Transaction State & Attempts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Api-Key", "value": "{{api_key}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/payments/{{last_txn_reference}}", "host": ["{{base_url}}"], "path": ["payments", "{{last_txn_reference}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Double-Entry General Ledger",
+      "item": [
+        {
+          "name": "Audit Ledger Zero-Drift Integrity",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Api-Key", "value": "{{api_key}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/ledger/integrity", "host": ["{{base_url}}"], "path": ["ledger", "integrity"] }
+          }
+        },
+        {
+          "name": "Get Chart of Accounts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Api-Key", "value": "{{api_key}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/ledger/accounts", "host": ["{{base_url}}"], "path": ["ledger", "accounts"] }
+          }
+        },
+        {
+          "name": "Get Journal Entries",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Api-Key", "value": "{{api_key}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/ledger/entries?limit=50", "host": ["{{base_url}}"], "path": ["ledger", "entries"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Settlements Engine",
+      "item": [
+        {
+          "name": "Generate T+1 Settlement Batch",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-Api-Key", "value": "{{api_key}}" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n    \"currency\": \"NGN\"\n}" },
+            "url": { "raw": "{{base_url}}/settlements/generate", "host": ["{{base_url}}"], "path": ["settlements", "generate"] }
+          }
+        },
+        {
+          "name": "List Settlement Batches",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Api-Key", "value": "{{api_key}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/settlements", "host": ["{{base_url}}"], "path": ["settlements"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Operational Analytics",
+      "item": [
+        {
+          "name": "Get Aggregated Operational Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Api-Key", "value": "{{api_key}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/analytics/summary", "host": ["{{base_url}}"], "path": ["analytics", "summary"] }
+          }
+        }
+      ]
+    }
+  ]
+}

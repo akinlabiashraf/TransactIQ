@@ -23,8 +23,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::prefix('v1')->group(function () {
-    // Infrastructure Health Check
+    // Infrastructure Health Check & OpenAPI Spec
     Route::get('/health', [HealthController::class, 'check']);
+    Route::get('/docs/openapi.json', [\App\Http\Controllers\DocsController::class, 'openapi']);
 
     // Public Loopback Webhook Receiver Endpoint for testing
     Route::post('/webhooks/test-endpoint', [WebhookController::class, 'testEndpoint']);

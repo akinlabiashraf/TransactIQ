@@ -7,7 +7,9 @@ import {
   Webhook, 
   Landmark, 
   ShieldCheck,
-  Terminal
+  Terminal,
+  BookOpen,
+  ExternalLink
 } from 'lucide-react';
 
 export type NavSection = 
@@ -144,6 +146,36 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onSelectSectio
             );
           })}
         </nav>
+      </div>
+
+      {/* Interactive API Docs Link */}
+      <div style={{ padding: '0 16px 12px' }}>
+        <a 
+          href="/docs" 
+          target="_blank" 
+          rel="noreferrer"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '10px 14px',
+            background: 'rgba(99, 102, 241, 0.08)',
+            border: '1px solid rgba(99, 102, 241, 0.25)',
+            borderRadius: 'var(--radius-md)',
+            color: 'var(--accent-primary)',
+            fontSize: '12px',
+            fontWeight: 600,
+            textDecoration: 'none',
+            transition: 'all 0.15s ease',
+          }}
+          className="card-interactive"
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <BookOpen size={16} />
+            <span>Interactive API Docs</span>
+          </div>
+          <ExternalLink size={13} />
+        </a>
       </div>
 
       {/* Footer Info */}
