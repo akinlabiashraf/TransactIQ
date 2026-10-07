@@ -1,4 +1,44 @@
-export type TransactionStatus = 'INITIATED' | 'PROCESSING' | 'SUCCESS' | 'FAILED' | 'PENDING' | 'REVERSED';
+export type TransactionStatus = 
+  | 'INITIATED' 
+  | 'PROCESSING' 
+  | 'SUCCESS' 
+  | 'FAILED' 
+  | 'PENDING' 
+  | 'REVERSED' 
+  | 'REFUNDED' 
+  | 'PARTIALLY_REFUNDED' 
+  | 'DISPUTED';
+
+export interface RefundItem {
+  id: string;
+  reference: string;
+  transaction_id: string;
+  merchant_id: string;
+  amount: number;
+  currency: string;
+  status: 'PENDING' | 'COMPLETED' | 'FAILED';
+  reason: string;
+  gateway_refund_reference?: string;
+  created_at: string;
+  transaction?: Partial<Transaction>;
+}
+
+export interface DisputeItem {
+  id: string;
+  reference: string;
+  transaction_id: string;
+  merchant_id: string;
+  amount: number;
+  currency: string;
+  status: 'OPEN' | 'UNDER_REVIEW' | 'WON' | 'LOST';
+  reason: string;
+  evidence?: Record<string, any>;
+  due_at?: string;
+  resolved_at?: string;
+  resolution_note?: string;
+  created_at: string;
+  transaction?: Partial<Transaction>;
+}
 
 export type AccountType = 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE';
 

@@ -9,12 +9,14 @@ import {
   ShieldCheck,
   Terminal,
   BookOpen,
-  ExternalLink
+  ExternalLink,
+  AlertOctagon,
 } from 'lucide-react';
 
 export type NavSection = 
   | 'overview' 
   | 'transactions' 
+  | 'disputes'
   | 'ledger' 
   | 'reconciliation' 
   | 'webhooks' 
@@ -31,6 +33,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onSelectSectio
   const navItems: { id: NavSection; label: string; icon: React.ReactNode; badge?: string }[] = [
     { id: 'overview', label: 'Overview', icon: <LayoutDashboard size={18} /> },
     { id: 'transactions', label: 'Transactions', icon: <ArrowLeftRight size={18} />, badge: 'FSM' },
+    { id: 'disputes', label: 'Disputes & Claims', icon: <AlertOctagon size={18} />, badge: 'Escrow' },
     { id: 'ledger', label: 'Double-Entry Ledger', icon: <Scale size={18} /> },
     { id: 'reconciliation', label: 'Reconciliation', icon: <GitCompare size={18} /> },
     { id: 'webhooks', label: 'Webhooks', icon: <Webhook size={18} /> },

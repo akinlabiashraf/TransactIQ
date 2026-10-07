@@ -2,9 +2,11 @@
 
 namespace App\Services\Ledger;
 
+use App\Models\Dispute;
 use App\Models\LedgerAccount;
 use App\Models\LedgerEntry;
 use App\Models\Merchant;
+use App\Models\Refund;
 use App\Models\Settlement;
 use App\Models\Transaction;
 use Illuminate\Support\Collection;
@@ -72,11 +74,25 @@ class LedgerService
             ]
         );
 
+        // 5. Merchant Dispute Escrow Reserve Account (Liability Level)
+        $disputeAccountNumber = 'ACC-' . strtoupper($merchant->merchant_code ?? 'MERCH') . '-DISPUTE-RSV';
+        $disputeReserve = LedgerAccount::firstOrCreate(
+            ['merchant_id' => $merchant->id, 'classification' => LedgerAccount::CLASS_ESCROW, 'currency' => $currency],
+            [
+                'account_number' => $disputeAccountNumber,
+                'name' => "{$merchant->name} Dispute Escrow Reserve",
+                'type' => LedgerAccount::TYPE_LIABILITY,
+                'balance' => 0,
+                'status' => 'ACTIVE',
+            ]
+        );
+
         return [
             'clearing' => $clearing,
             'revenue' => $revenue,
             'available' => $available,
             'pending' => $pending,
+            'dispute_reserve' => $disputeReserve,
         ];
     }
 
@@ -235,6 +251,150 @@ class LedgerService
             // Pending escrow eliminated, Provider clearing relieved
             $accounts['pending']->lockForUpdate()->decrement('balance', $amount);
             $accounts['clearing']->lockForUpdate()->decrement('balance', $amount);
+
+            return $entry;
+        });
+    }
+
+    /**
+     * Record balanced double-entry reversal journal entries for a completed refund.
+     *
+     * Invariant:
+     * Debit Merchant Available Liability: refund_amount (reduces liability owed to merchant)
+     * Credit Provider Clearing Asset: refund_amount (funds discharged back to customer via gateway)
+     * Total Debits === Total Credits. Zero drift!
+     */
+    public function recordRefund(Refund $refund): LedgerEntry
+    {
+        return DB::transaction(function () use ($refund) {
+            /** @var Merchant $merchant */
+            $merchant = $refund->merchant ?? Merchant::findOrFail($refund->merchant_id);
+            $accounts = $this->resolveAccounts($merchant, $refund->currency);
+
+            $amount = (int) $refund->amount;
+            $date = now()->format('Ymd');
+            $ref = "JRN-{$date}-" . strtoupper(Str::random(8));
+
+            $entry = LedgerEntry::create([
+                'transaction_id' => $refund->transaction_id,
+                'debit_account_id' => $accounts['available']->id,
+                'credit_account_id' => $accounts['clearing']->id,
+                'amount' => $amount,
+                'currency' => $refund->currency,
+                'entry_type' => LedgerEntry::TYPE_REVERSAL,
+                'reference' => $ref,
+                'description' => "Refund processed for transaction [{$refund->transaction?->reference}] - Reason: {$refund->reason}",
+                'metadata' => [
+                    'refund_id' => $refund->id,
+                    'refund_reference' => $refund->reference,
+                    'reason' => $refund->reason,
+                ],
+            ]);
+
+            // Atomically update ledger account balances
+            $accounts['available']->lockForUpdate()->decrement('balance', $amount);
+            $accounts['clearing']->lockForUpdate()->decrement('balance', $amount);
+
+            return $entry;
+        });
+    }
+
+    /**
+     * Place merchant funds into Dispute Escrow Reserve pending chargeback adjudication.
+     *
+     * Invariant:
+     * Debit Merchant Available Liability: dispute_amount
+     * Credit Merchant Dispute Escrow Reserve: dispute_amount
+     */
+    public function recordDisputeHold(Dispute $dispute): LedgerEntry
+    {
+        return DB::transaction(function () use ($dispute) {
+            /** @var Merchant $merchant */
+            $merchant = $dispute->merchant ?? Merchant::findOrFail($dispute->merchant_id);
+            $accounts = $this->resolveAccounts($merchant, $dispute->currency);
+
+            $amount = (int) $dispute->amount;
+            $date = now()->format('Ymd');
+            $ref = "JRN-{$date}-" . strtoupper(Str::random(8));
+
+            $entry = LedgerEntry::create([
+                'transaction_id' => $dispute->transaction_id,
+                'debit_account_id' => $accounts['available']->id,
+                'credit_account_id' => $accounts['dispute_reserve']->id,
+                'amount' => $amount,
+                'currency' => $dispute->currency,
+                'entry_type' => 'DISPUTE_HOLD',
+                'reference' => $ref,
+                'description' => "Disputed funds placed in escrow hold for dispute [{$dispute->reference}]",
+                'metadata' => [
+                    'dispute_id' => $dispute->id,
+                    'dispute_reference' => $dispute->reference,
+                    'reason' => $dispute->reason,
+                ],
+            ]);
+
+            $accounts['available']->lockForUpdate()->decrement('balance', $amount);
+            $accounts['dispute_reserve']->lockForUpdate()->increment('balance', $amount);
+
+            return $entry;
+        });
+    }
+
+    /**
+     * Resolve dispute escrow:
+     * - If Merchant WON: Release reserve back to Merchant Available balance.
+     * - If Merchant LOST (chargeback upheld): Relieve reserve and credit external clearing asset.
+     */
+    public function recordDisputeResolution(Dispute $dispute, bool $merchantWon): LedgerEntry
+    {
+        return DB::transaction(function () use ($dispute, $merchantWon) {
+            /** @var Merchant $merchant */
+            $merchant = $dispute->merchant ?? Merchant::findOrFail($dispute->merchant_id);
+            $accounts = $this->resolveAccounts($merchant, $dispute->currency);
+
+            $amount = (int) $dispute->amount;
+            $date = now()->format('Ymd');
+            $ref = "JRN-{$date}-" . strtoupper(Str::random(8));
+
+            if ($merchantWon) {
+                // Merchant Won: Return funds from escrow to available
+                $entry = LedgerEntry::create([
+                    'transaction_id' => $dispute->transaction_id,
+                    'debit_account_id' => $accounts['dispute_reserve']->id,
+                    'credit_account_id' => $accounts['available']->id,
+                    'amount' => $amount,
+                    'currency' => $dispute->currency,
+                    'entry_type' => 'DISPUTE_REVERSED',
+                    'reference' => $ref,
+                    'description' => "Dispute won - escrow reserve returned to available balance [{$dispute->reference}]",
+                    'metadata' => [
+                        'dispute_id' => $dispute->id,
+                        'outcome' => 'WON',
+                    ],
+                ]);
+
+                $accounts['dispute_reserve']->lockForUpdate()->decrement('balance', $amount);
+                $accounts['available']->lockForUpdate()->increment('balance', $amount);
+            } else {
+                // Merchant Lost: Escrow disbursed to settle chargeback
+                $entry = LedgerEntry::create([
+                    'transaction_id' => $dispute->transaction_id,
+                    'debit_account_id' => $accounts['dispute_reserve']->id,
+                    'credit_account_id' => $accounts['clearing']->id,
+                    'amount' => $amount,
+                    'currency' => $dispute->currency,
+                    'entry_type' => 'CHARGEBACK_LOST',
+                    'reference' => $ref,
+                    'description' => "Dispute lost - escrow reserve deducted for chargeback [{$dispute->reference}]",
+                    'metadata' => [
+                        'dispute_id' => $dispute->id,
+                        'outcome' => 'LOST',
+                    ],
+                ]);
+
+                $accounts['dispute_reserve']->lockForUpdate()->decrement('balance', $amount);
+                $accounts['clearing']->lockForUpdate()->decrement('balance', $amount);
+            }
 
             return $entry;
         });

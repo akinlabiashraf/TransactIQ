@@ -84,7 +84,7 @@ class PaymentController extends Controller
 
         $transaction = Transaction::where('merchant_id', $merchant->id)
             ->where('reference', $reference)
-            ->with(['customer', 'events', 'paymentAttempts'])
+            ->with(['customer', 'events', 'paymentAttempts', 'refunds', 'disputes'])
             ->first();
 
         if (!$transaction) {
@@ -156,6 +156,8 @@ class PaymentController extends Controller
             'failure_reason' => $t->failure_reason,
             'paid_at' => $t->paid_at?->toIso8601String(),
             'created_at' => $t->created_at->toIso8601String(),
+            'refundable_amount' => $t->refundableAmount(),
+            'total_refunded_amount' => $t->totalRefundedAmount(),
             'customer' => $t->customer ? [
                 'id' => $t->customer->id,
                 'customer_code' => $t->customer->customer_code,
@@ -182,6 +184,24 @@ class PaymentController extends Controller
                 'latency_ms' => $a->latency_ms,
                 'created_at' => $a->created_at->toIso8601String(),
             ])->toArray(),
+            'refunds' => $t->refunds ? $t->refunds->map(fn($r) => [
+                'id' => $r->id,
+                'reference' => $r->reference,
+                'amount' => $r->amount,
+                'currency' => $r->currency,
+                'status' => $r->status,
+                'reason' => $r->reason,
+                'created_at' => $r->created_at->toIso8601String(),
+            ])->toArray() : [],
+            'disputes' => $t->disputes ? $t->disputes->map(fn($d) => [
+                'id' => $d->id,
+                'reference' => $d->reference,
+                'amount' => $d->amount,
+                'currency' => $d->currency,
+                'status' => $d->status,
+                'reason' => $d->reason,
+                'created_at' => $d->created_at->toIso8601String(),
+            ])->toArray() : [],
         ];
     }
 

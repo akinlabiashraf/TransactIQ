@@ -18,6 +18,9 @@ class Transaction extends Model
     public const STATUS_FAILED = 'FAILED';
     public const STATUS_PENDING = 'PENDING';
     public const STATUS_REVERSED = 'REVERSED';
+    public const STATUS_REFUNDED = 'REFUNDED';
+    public const STATUS_PARTIALLY_REFUNDED = 'PARTIALLY_REFUNDED';
+    public const STATUS_DISPUTED = 'DISPUTED';
 
     protected $fillable = [
         'reference',
@@ -92,6 +95,34 @@ class Transaction extends Model
         return $this->hasMany(ReconciliationException::class);
     }
 
+    public function refunds(): HasMany
+    {
+        return $this->hasMany(Refund::class)->orderBy('created_at', 'asc');
+    }
+
+    public function disputes(): HasMany
+    {
+        return $this->hasMany(Dispute::class)->orderBy('created_at', 'asc');
+    }
+
+    /**
+     * Total amount in minor units already refunded for this transaction.
+     */
+    public function totalRefundedAmount(): int
+    {
+        return (int) $this->refunds()
+            ->where('status', Refund::STATUS_COMPLETED)
+            ->sum('amount');
+    }
+
+    /**
+     * Remaining amount available to be refunded.
+     */
+    public function refundableAmount(): int
+    {
+        return max(0, $this->amount - $this->totalRefundedAmount());
+    }
+
     /**
      * Determine if a transition to a new status is valid per FSM rules.
      */
@@ -101,9 +132,25 @@ class Transaction extends Model
             self::STATUS_INITIATED => [self::STATUS_PROCESSING, self::STATUS_FAILED],
             self::STATUS_PROCESSING => [self::STATUS_SUCCESS, self::STATUS_FAILED, self::STATUS_PENDING],
             self::STATUS_PENDING => [self::STATUS_SUCCESS, self::STATUS_FAILED],
-            self::STATUS_SUCCESS => [self::STATUS_REVERSED],
+            self::STATUS_SUCCESS => [
+                self::STATUS_REVERSED,
+                self::STATUS_PARTIALLY_REFUNDED,
+                self::STATUS_REFUNDED,
+                self::STATUS_DISPUTED,
+            ],
+            self::STATUS_PARTIALLY_REFUNDED => [
+                self::STATUS_PARTIALLY_REFUNDED,
+                self::STATUS_REFUNDED,
+                self::STATUS_REVERSED,
+            ],
+            self::STATUS_DISPUTED => [
+                self::STATUS_SUCCESS,
+                self::STATUS_REVERSED,
+                self::STATUS_REFUNDED,
+            ],
             self::STATUS_FAILED => [],
             self::STATUS_REVERSED => [],
+            self::STATUS_REFUNDED => [],
         ];
 
         return in_array($newStatus, $allowedTransitions[$this->status] ?? [], true);

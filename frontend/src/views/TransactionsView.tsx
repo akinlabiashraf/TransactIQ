@@ -8,10 +8,12 @@ import {
   X, 
   Clock, 
   Server, 
-  AlertCircle 
+  AlertCircle,
+  RotateCcw
 } from 'lucide-react';
 import { apiService } from '../services/api';
 import type { Transaction, PaginationMeta } from '../types';
+import { RefundModal } from '../components/RefundModal';
 
 interface TransactionsViewProps {
   apiKey?: string;
@@ -39,6 +41,9 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
   const [selectedTxnReference, setSelectedTxnReference] = useState<string | null>(null);
   const [selectedTxnDetails, setSelectedTxnDetails] = useState<any | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+
+  // Refund modal state
+  const [refundModalTxn, setRefundModalTxn] = useState<Transaction | null>(null);
 
   // Fetch transactions from backend
   const fetchTransactions = useCallback(async () => {
@@ -379,6 +384,51 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                   </div>
                 </div>
 
+                {/* Refund Action Button */}
+                {(selectedTxnDetails.status === 'SUCCESS' || selectedTxnDetails.status === 'PARTIALLY_REFUNDED') && (
+                  <button
+                    id="trigger-refund-btn"
+                    onClick={() => {
+                      const txnObj: Transaction = {
+                        id: selectedTxnDetails.id,
+                        reference: selectedTxnDetails.reference,
+                        merchant_id: selectedTxnDetails.merchant_id || '',
+                        customer_email: selectedTxnDetails.customer?.email || 'N/A',
+                        amount: selectedTxnDetails.refundable_amount ?? selectedTxnDetails.amount,
+                        fee_amount: selectedTxnDetails.fee_amount,
+                        net_amount: selectedTxnDetails.net_amount,
+                        currency: selectedTxnDetails.currency,
+                        status: selectedTxnDetails.status,
+                        payment_method: selectedTxnDetails.payment_method,
+                        idempotency_key: selectedTxnDetails.idempotency_key,
+                        provider: selectedTxnDetails.provider,
+                        created_at: selectedTxnDetails.created_at,
+                      };
+                      setRefundModalTxn(txnObj);
+                    }}
+                    className="btn btn-secondary"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      padding: '10px 16px',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      color: '#f59e0b',
+                      borderColor: 'rgba(245, 158, 11, 0.4)',
+                      background: 'rgba(245, 158, 11, 0.08)',
+                      width: '100%',
+                      cursor: 'pointer',
+                      borderRadius: 'var(--radius-md)',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <RotateCcw size={15} />
+                    <span>Issue Refund {selectedTxnDetails.refundable_amount ? `(Available: ${apiService.formatMoney(selectedTxnDetails.refundable_amount, selectedTxnDetails.currency)})` : ''}</span>
+                  </button>
+                )}
+
                 {/* Technical Metadata */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
@@ -471,10 +521,64 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                     ))}
                   </div>
                 </div>
+
+                {/* Processed Refunds Section */}
+                {selectedTxnDetails.refunds && selectedTxnDetails.refunds.length > 0 && (
+                  <div>
+                    <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#fff', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <RotateCcw size={16} color="#f59e0b" />
+                      <span>Processed Refunds ({selectedTxnDetails.refunds.length})</span>
+                    </h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {selectedTxnDetails.refunds.map((rf: any, idx: number) => (
+                        <div key={idx} style={{
+                          padding: '10px 14px',
+                          background: 'rgba(245, 158, 11, 0.05)',
+                          border: '1px solid rgba(245, 158, 11, 0.2)',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                            <span style={{ fontWeight: 600, color: '#f59e0b' }}>
+                              {apiService.formatMoney(rf.amount, rf.currency)}
+                            </span>
+                            <span className="badge badge-warning" style={{ fontSize: '10px' }}>
+                              {rf.status}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', fontSize: '11px' }}>
+                            <span>Ref: {rf.reference}</span>
+                            <span>{new Date(rf.created_at).toLocaleTimeString()}</span>
+                          </div>
+                          {rf.reason && (
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '11px', marginTop: '4px' }}>
+                              Reason: {rf.reason}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>
         </div>
+      )}
+
+      {/* Full or Partial Refund Modal */}
+      {refundModalTxn && (
+        <RefundModal
+          transaction={refundModalTxn}
+          apiKey={apiKey}
+          onClose={() => setRefundModalTxn(null)}
+          onSuccess={() => {
+            fetchTransactions();
+            if (selectedTxnReference) {
+              handleSelectTransaction(selectedTxnReference);
+            }
+          }}
+        />
       )}
     </div>
   );

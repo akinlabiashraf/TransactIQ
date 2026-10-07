@@ -9,6 +9,7 @@ import { WebhooksView } from './views/WebhooksView';
 import { SettlementsView } from './views/SettlementsView';
 import { SecurityView } from './views/SecurityView';
 import { SandboxView } from './views/SandboxView';
+import { DisputesView } from './views/DisputesView';
 import { apiService } from './services/api';
 import type { 
   SystemHealth, 
@@ -232,16 +233,18 @@ export function App() {
     }
   };
 
-  const getSectionTitle = () => {
+  const getSectionTitle = (): { title: string; subtitle: string } => {
     switch (currentSection) {
       case 'overview': return { title: 'Operational Overview', subtitle: 'Platform-wide telemetry, transaction metrics, and state machine health' };
       case 'transactions': return { title: 'Payment Transactions', subtitle: 'Audit log of all payment requests, state transitions, and idempotency keys' };
+      case 'disputes': return { title: 'Chargebacks & Disputes Console', subtitle: 'Contested payment adjudication, evidence submission, and escrow hold tracking' };
       case 'ledger': return { title: 'Double-Entry General Ledger', subtitle: 'Chart of accounts and balanced debit/credit financial entries' };
       case 'reconciliation': return { title: 'Automated Reconciliation', subtitle: 'Internal vs provider clearing file comparison and discrepancy matrix' };
       case 'webhooks': return { title: 'Webhook Delivery Engine', subtitle: 'Cryptographically signed HMAC notifications and retry attempt history' };
       case 'settlements': return { title: 'Merchant Settlements', subtitle: 'T+1 payout batching, platform fee deductions, and clearing ledger' };
       case 'security': return { title: 'Enterprise Security & RBAC', subtitle: 'Tamper-evident audit ledger, real-time risk heuristics, and institutional RBAC matrix' };
       case 'sandbox': return { title: 'API Keys & Payment Sandbox', subtitle: 'Interactive transaction simulator with idempotency verification' };
+      default: return { title: 'TransactIQ Institutional Portal', subtitle: 'Enterprise payment orchestration & ledger engine' };
     }
   };
 
@@ -280,6 +283,10 @@ export function App() {
               apiKey={activeApiKey}
               onOpenSandbox={() => setCurrentSection('sandbox')}
             />
+          )}
+
+          {currentSection === 'disputes' && (
+            <DisputesView apiKey={activeApiKey} />
           )}
 
           {currentSection === 'ledger' && (

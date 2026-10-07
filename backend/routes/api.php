@@ -2,10 +2,12 @@
 
 use App\Http\Controllers\Api\AnalyticsController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DisputeController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\LedgerController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ReconciliationController;
+use App\Http\Controllers\Api\RefundController;
 use App\Http\Controllers\Api\SecurityController;
 use App\Http\Controllers\Api\SettlementController;
 use App\Http\Controllers\Api\WebhookController;
@@ -54,6 +56,26 @@ Route::prefix('v1')->group(function () {
             ->middleware('role:merchant,admin,auditor,operations');
         Route::get('/payments/{reference}', [PaymentController::class, 'show'])
             ->middleware('role:merchant,admin,auditor,operations');
+
+        // Financial Refunds & Reversals Engine
+        Route::post('/payments/{reference}/refund', [RefundController::class, 'store'])
+            ->middleware('role:merchant,admin,operations');
+        Route::get('/refunds', [RefundController::class, 'index'])
+            ->middleware('role:merchant,admin,operations,auditor');
+        Route::get('/refunds/{reference}', [RefundController::class, 'show'])
+            ->middleware('role:merchant,admin,operations,auditor');
+
+        // Chargebacks & Disputes Engine
+        Route::get('/disputes', [DisputeController::class, 'index'])
+            ->middleware('role:merchant,admin,operations,auditor');
+        Route::get('/disputes/{reference}', [DisputeController::class, 'show'])
+            ->middleware('role:merchant,admin,operations,auditor');
+        Route::post('/disputes', [DisputeController::class, 'store'])
+            ->middleware('role:merchant,admin,operations');
+        Route::post('/disputes/{reference}/evidence', [DisputeController::class, 'submitEvidence'])
+            ->middleware('role:merchant,admin,operations');
+        Route::post('/disputes/{reference}/resolve', [DisputeController::class, 'resolve'])
+            ->middleware('role:admin,operations');
 
         // Webhook Delivery Engine
         Route::get('/webhooks', [WebhookController::class, 'index'])

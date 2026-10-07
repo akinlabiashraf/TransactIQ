@@ -16,6 +16,8 @@ import type {
   Transaction,
   PaginationMeta,
   AnalyticsSummary,
+  RefundItem,
+  DisputeItem,
 } from '../types';
 
 const API_BASE = '/api/v1';
@@ -636,6 +638,226 @@ export const apiService = {
    */
   getStoredToken(): string | null {
     return localStorage.getItem('transactiq_user_token');
+  },
+
+  /**
+   * Stage 18: Issue full or partial refund
+   */
+  async issueRefund(
+    apiKey: string,
+    transactionReference: string,
+    amountMinor?: number,
+    reason?: string
+  ): Promise<{ status: string; message: string; data: any }> {
+    const token = this.getStoredToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'X-Api-Key': apiKey,
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const body: Record<string, any> = {};
+    if (amountMinor) body.amount = amountMinor;
+    if (reason) body.reason = reason;
+
+    const res = await fetch(`${API_BASE}/payments/${transactionReference}/refund`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+
+    const json = await res.json();
+    if (!res.ok) {
+      throw new Error(json.message || `Refund failed with status ${res.status}`);
+    }
+    return json;
+  },
+
+  /**
+   * Stage 18: Fetch refunds list
+   */
+  async getRefunds(
+    apiKey: string,
+    page = 1,
+    perPage = 15,
+    status?: string
+  ): Promise<{ data: RefundItem[]; pagination: PaginationMeta }> {
+    const token = this.getStoredToken();
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+      'X-Api-Key': apiKey,
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    let url = `${API_BASE}/refunds?page=${page}&per_page=${perPage}`;
+    if (status && status !== 'ALL') {
+      url += `&status=${status}`;
+    }
+
+    const res = await fetch(url, { headers });
+    const json = await res.json();
+    if (!res.ok) {
+      throw new Error(json.message || `Failed to fetch refunds`);
+    }
+
+    return {
+      data: json.data || [],
+      pagination: {
+        current_page: json.meta?.current_page || page,
+        per_page: json.meta?.per_page || perPage,
+        total: json.meta?.total || 0,
+        last_page: json.meta?.last_page || 1,
+      },
+    };
+  },
+
+  /**
+   * Stage 18: Fetch disputes list
+   */
+  async getDisputes(
+    apiKey: string,
+    page = 1,
+    perPage = 15,
+    status?: string
+  ): Promise<{ data: DisputeItem[]; pagination: PaginationMeta }> {
+    const token = this.getStoredToken();
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+      'X-Api-Key': apiKey,
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    let url = `${API_BASE}/disputes?page=${page}&per_page=${perPage}`;
+    if (status && status !== 'ALL') {
+      url += `&status=${status}`;
+    }
+
+    const res = await fetch(url, { headers });
+    const json = await res.json();
+    if (!res.ok) {
+      throw new Error(json.message || `Failed to fetch disputes`);
+    }
+
+    return {
+      data: json.data || [],
+      pagination: {
+        current_page: json.meta?.current_page || page,
+        per_page: json.meta?.per_page || perPage,
+        total: json.meta?.total || 0,
+        last_page: json.meta?.last_page || 1,
+      },
+    };
+  },
+
+  /**
+   * Stage 18: Open dispute
+   */
+  async createDispute(
+    apiKey: string,
+    transactionReference: string,
+    amountMinor?: number,
+    reason?: string
+  ): Promise<any> {
+    const token = this.getStoredToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'X-Api-Key': apiKey,
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const body: Record<string, any> = {
+      transaction_reference: transactionReference,
+    };
+    if (amountMinor) body.amount = amountMinor;
+    if (reason) body.reason = reason;
+
+    const res = await fetch(`${API_BASE}/disputes`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+
+    const json = await res.json();
+    if (!res.ok) {
+      throw new Error(json.message || `Failed to create dispute`);
+    }
+    return json;
+  },
+
+  /**
+   * Stage 18: Submit dispute evidence
+   */
+  async submitDisputeEvidence(
+    apiKey: string,
+    disputeReference: string,
+    evidence: Record<string, any>
+  ): Promise<any> {
+    const token = this.getStoredToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'X-Api-Key': apiKey,
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${API_BASE}/disputes/${disputeReference}/evidence`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ evidence }),
+    });
+
+    const json = await res.json();
+    if (!res.ok) {
+      throw new Error(json.message || `Failed to submit evidence`);
+    }
+    return json;
+  },
+
+  /**
+   * Stage 18: Resolve dispute
+   */
+  async resolveDispute(
+    apiKey: string,
+    disputeReference: string,
+    outcome: 'WON' | 'LOST',
+    resolutionNote?: string
+  ): Promise<any> {
+    const token = this.getStoredToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'X-Api-Key': apiKey,
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${API_BASE}/disputes/${disputeReference}/resolve`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        outcome,
+        resolution_note: resolutionNote,
+      }),
+    });
+
+    const json = await res.json();
+    if (!res.ok) {
+      throw new Error(json.message || `Failed to resolve dispute`);
+    }
+    return json;
   },
 };
 

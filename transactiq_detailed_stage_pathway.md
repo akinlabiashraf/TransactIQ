@@ -2,9 +2,9 @@
 
 > **Intelligent Payment Processing, Reconciliation & Settlement Platform**  
 > *A Production-Grade Fintech Infrastructure & Financial Operations Engine*  
-> Current Status: **Stages 1 – 13, 15 – 17 Completed (100% Green, 71 Tests Passing)**  
-> Roadmap: **Stages 14, 18 – 20 Evolution Pathway**  
-> Last Updated: 2026-10-04
+> Current Status: **Stages 1 – 13, 15 – 18 Completed (100% Green, 76 Tests Passing)**  
+> Roadmap: **Stages 14, 19 – 20 Evolution Pathway**  
+> Last Updated: 2026-10-07
 
 ---
 
@@ -136,11 +136,11 @@ STAGE 17: Load & Concurrency Stress Testing (k6) [COMPLETED ✅]
    ├── [x] 17.3 Latency percentiles measurement (p50, p95, p99) & error rate (<0.1%)
    └── [x] 17.4 Concurrent ledger posting validation (zero drift verification)
 
-STAGE 18: Financial Lifecycle Expansion: Refunds, Disputes & Poller [P2 - PLANNED 📋]
-   ├── [ ] 18.1 Refunds schema & RefundService (full/partial refunds, ledger reversals)
-   ├── [ ] 18.2 Disputes schema & DisputeService (escrow reserve liability account)
-   ├── [ ] 18.3 Background pending poller artisan command (payments:poll-pending)
-   └── [ ] 18.4 Frontend Refund modal & Disputes console
+STAGE 18: Financial Lifecycle Expansion: Refunds, Disputes & Poller [COMPLETED ✅]
+   ├── [x] 18.1 Refunds schema & RefundService (full/partial refunds, ledger reversals)
+   ├── [x] 18.2 Disputes schema & DisputeService (escrow reserve liability account)
+   ├── [x] 18.3 Background pending poller artisan command (payments:poll-pending)
+   └── [x] 18.4 Frontend Refund modal & Disputes console
 
 STAGE 19: Real Payment Sandbox & ML Fraud Detection [P2 - PLANNED 📋]
    ├── [ ] 19.1 Real provider sandbox adapter (Paystack/Flutterwave/Stripe behind contract)
@@ -169,7 +169,7 @@ STAGE 20: Final Portfolio & Institutional Case Study [P1 - PLANNED 📋]
 | 2026-10-04 | Stage 15 | Observability, Monitoring & Live UI Wiring | 66/66 PASSED (454 assertions) ✅ |
 | 2026-10-04 | Stage 16 | API Documentation & Developer Experience (OpenAPI / Scalar UI) | 68/68 PASSED (469 assertions) ✅ |
 | 2026-10-04 | Stage 17 | Load & Concurrency Stress Testing (k6 & Node runner) | 71/71 PASSED (497 assertions) ✅ |
-| *Pending* | Stage 18 | Financial Lifecycle Expansion: Refunds, Disputes & Poller | *Scheduled (P2)* |
+| 2026-10-07 | Stage 18 | Financial Lifecycle Expansion: Refunds, Disputes & Poller | 76/76 PASSED (543 assertions) ✅ |
 | *Pending* | Stage 19 | Real Payment Sandbox & ML Fraud Detection (Python + FastAPI) | *Scheduled (P2)* |
 | *Pending* | Stage 20 | Final Portfolio & Institutional Case Study | *Scheduled (P1)* |
 
