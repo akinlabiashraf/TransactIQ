@@ -5,7 +5,10 @@ namespace App\Services\Gateway;
 use App\Models\PaymentAttempt;
 use App\Models\Transaction;
 use App\Models\TransactionEvent;
+use App\Services\Gateway\Adapters\FlutterwavePaymentGateway;
+use App\Services\Gateway\Adapters\PaystackPaymentGateway;
 use App\Services\Gateway\Adapters\SimulatedPaymentGateway;
+use App\Services\Gateway\Adapters\StripePaymentGateway;
 use App\Services\Gateway\Contracts\PaymentGatewayInterface;
 use App\Services\Gateway\DTOs\GatewayResponse;
 use Illuminate\Support\Facades\Log;
@@ -24,12 +27,33 @@ class GatewayManager
     }
 
     /**
+     * Resolve a payment gateway adapter by provider name.
+     */
+    public function resolveGateway(string $provider): PaymentGatewayInterface
+    {
+        return match (strtoupper(trim($provider))) {
+            'PAYSTACK' => new PaystackPaymentGateway(),
+            'FLUTTERWAVE' => new FlutterwavePaymentGateway(),
+            'STRIPE' => new StripePaymentGateway(),
+            'SIMULATED_FALLBACK' => new SimulatedPaymentGateway('SIMULATED_FALLBACK'),
+            default => new SimulatedPaymentGateway('SIMULATED_PRIMARY'),
+        };
+    }
+
+    /**
      * Execute payment charge across gateways with automatic fallback and attempt recording.
      */
     public function executeCharge(Transaction $transaction, array $paymentDetails): GatewayResponse
     {
+        // Check if caller requested a specific preferred gateway
+        $preferredProvider = $paymentDetails['preferred_gateway'] ?? ($paymentDetails['provider'] ?? null);
+        $primary = $preferredProvider ? $this->resolveGateway($preferredProvider) : $this->primaryGateway;
+        $fallback = ($preferredProvider && strtoupper($preferredProvider) !== 'SIMULATED_PRIMARY')
+            ? $this->primaryGateway
+            : $this->fallbackGateway;
+
         // 1. First Attempt: Primary Gateway
-        $response1 = $this->primaryGateway->charge($transaction, $paymentDetails);
+        $response1 = $primary->charge($transaction, $paymentDetails);
         $this->recordAttempt($transaction, 1, $response1);
 
         // If primary attempt succeeded or encountered a non-retryable terminal state (e.g. Card Expired, Insufficient Funds)
@@ -45,14 +69,14 @@ class GatewayManager
             'event_type' => 'GATEWAY_FAILOVER_INITIATED',
             'triggered_by' => 'GATEWAY_MANAGER',
             'payload' => [
-                'primary_provider' => $this->primaryGateway->getName(),
+                'primary_provider' => $primary->getName(),
                 'primary_error' => $response1->errorCode,
-                'fallback_provider' => $this->fallbackGateway->getName(),
+                'fallback_provider' => $fallback->getName(),
                 'reason' => 'Primary payment gateway returned retryable network/switch failure. Attempting secondary route.',
             ],
         ]);
 
-        $response2 = $this->fallbackGateway->charge($transaction, $paymentDetails);
+        $response2 = $fallback->charge($transaction, $paymentDetails);
         $this->recordAttempt($transaction, 2, $response2);
 
         return $response2;

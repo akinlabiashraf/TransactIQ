@@ -256,6 +256,12 @@ export interface RiskMetrics {
   block_rate_percentage: number;
   active_rules_count: number;
   rules: RiskRuleItem[];
+  ml_fraud_engine?: {
+    status: 'ONLINE' | 'OFFLINE_STANDBY';
+    model: string;
+    algorithm: string;
+    features_count: number;
+  };
   evaluated_at: string;
 }
 
@@ -291,6 +297,9 @@ export interface RiskSimulationResult {
   decision: 'ALLOW' | 'REVIEW' | 'BLOCK';
   flags: string[];
   reason: string;
+  ml_anomaly_score?: number | null;
+  ml_risk_level?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | null;
+  ml_anomaly_factors?: string[];
   metadata?: Record<string, any>;
 }
 

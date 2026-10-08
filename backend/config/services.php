@@ -35,4 +35,26 @@ return [
         ],
     ],
 
+    'paystack' => [
+        'secret_key' => env('PAYSTACK_SECRET_KEY'),
+        'public_key' => env('PAYSTACK_PUBLIC_KEY'),
+        'base_url' => env('PAYSTACK_BASE_URL', 'https://api.paystack.co'),
+    ],
+
+    'flutterwave' => [
+        'secret_key' => env('FLUTTERWAVE_SECRET_KEY'),
+        'public_key' => env('FLUTTERWAVE_PUBLIC_KEY'),
+        'base_url' => env('FLUTTERWAVE_BASE_URL', 'https://api.flutterwave.com/v3'),
+    ],
+
+    'stripe' => [
+        'secret_key' => env('STRIPE_SECRET_KEY'),
+        'public_key' => env('STRIPE_PUBLIC_KEY'),
+        'base_url' => env('STRIPE_BASE_URL', 'https://api.stripe.com/v1'),
+    ],
+
+    'ai' => [
+        'fraud_url' => env('AI_FRAUD_URL', 'http://127.0.0.1:8001/predict/fraud'),
+    ],
+
 ];

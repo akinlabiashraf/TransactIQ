@@ -7,6 +7,8 @@ use App\Models\Merchant;
 use App\Models\Transaction;
 use App\Models\TransactionEvent;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class RiskService
 {
@@ -44,7 +46,10 @@ class RiskService
                 decision: RiskEvaluationResult::DECISION_BLOCK,
                 flags: $flags,
                 reason: implode(' ', $reasons),
-                metadata: ['rule' => 'CARD_BLACKLIST', 'card_last4' => substr($cardNumber, -4)]
+                metadata: ['rule' => 'CARD_BLACKLIST', 'card_last4' => substr($cardNumber, -4)],
+                mlAnomalyScore: 1.0,
+                mlRiskLevel: 'CRITICAL',
+                mlAnomalyFactors: ['BLACKLISTED_INSTRUMENT']
             );
         }
 
@@ -61,6 +66,7 @@ class RiskService
         }
 
         // Rule 3: Consecutive Payment Failures
+        $consecutiveFailures = 0;
         if ($customer) {
             $consecutiveFailures = $this->checkConsecutiveFailures($customer);
             if ($consecutiveFailures >= 3) {
@@ -85,6 +91,42 @@ class RiskService
             $reasons[] = 'Customer email matches disposable or suspicious pattern.';
         }
 
+        // Rule 6: Machine Learning Anomaly Detection Microservice (Isolation Forest)
+        $hourlyVelocity = $this->checkHourlyVelocity($merchant?->id, $customerEmail);
+        $isNight = (now()->hour < 5 || now()->hour >= 23) ? 1 : 0;
+        $binRisk = $this->getBinRiskFactor($cardNumber);
+        $tenureDays = $customer?->created_at ? max(1, $customer->created_at->diffInDays(now())) : 30;
+
+        $mlFeatures = [
+            'amount' => $amount,
+            'velocity_1m' => $velocityCount,
+            'velocity_1h' => $hourlyVelocity,
+            'consecutive_failures' => $consecutiveFailures,
+            'is_night_transaction' => $isNight,
+            'card_bin_risk' => $binRisk,
+            'customer_tenure_days' => $tenureDays,
+        ];
+
+        $mlResult = $this->callMlFraudEngine($mlFeatures);
+        $mlAnomalyScore = $mlResult['anomaly_score'] ?? null;
+        $mlRiskLevel = $mlResult['risk_level'] ?? null;
+        $mlFactors = $mlResult['anomaly_factors'] ?? [];
+
+        if ($mlResult) {
+            if ($mlRiskLevel === 'CRITICAL') {
+                $score += 45;
+                $flags[] = 'ML_ANOMALY_CRITICAL';
+                $reasons[] = 'AI Anomaly Engine detected critical deviation (' . implode(', ', $mlFactors) . ').';
+            } elseif ($mlRiskLevel === 'HIGH') {
+                $score += 25;
+                $flags[] = 'ML_ANOMALY_HIGH';
+                $reasons[] = 'AI Anomaly Engine flagged elevated fraud risk.';
+            } elseif ($mlRiskLevel === 'MEDIUM') {
+                $score += 10;
+                $flags[] = 'ML_ANOMALY_MODERATE';
+            }
+        }
+
         // Compute Decision based on Cumulative Score
         $score = min(100, $score);
         $decision = match (true) {
@@ -100,14 +142,20 @@ class RiskService
             reason: !empty($reasons) ? implode(' ', $reasons) : 'Transaction passed all fraud and velocity heuristics.',
             metadata: [
                 'velocity_count' => $velocityCount,
+                'hourly_velocity' => $hourlyVelocity,
                 'high_ticket' => in_array('HIGH_TICKET_ALERT', $flags, true),
+                'ml_service_status' => $mlResult ? 'ONLINE' : 'FALLBACK',
                 'score_breakdown' => [
                     'base' => 0,
                     'velocity' => $velocityCount >= 5 ? 60 : ($velocityCount >= 3 ? 25 : 0),
-                    'consecutive_failures' => isset($consecutiveFailures) && $consecutiveFailures >= 3 ? 35 : 0,
+                    'consecutive_failures' => $consecutiveFailures >= 3 ? 35 : 0,
                     'high_ticket' => $amount >= self::HIGH_TICKET_THRESHOLD_MINOR ? 30 : 0,
+                    'ml_anomaly' => ($mlRiskLevel === 'CRITICAL' ? 45 : ($mlRiskLevel === 'HIGH' ? 25 : ($mlRiskLevel === 'MEDIUM' ? 10 : 0))),
                 ],
-            ]
+            ],
+            mlAnomalyScore: $mlAnomalyScore,
+            mlRiskLevel: $mlRiskLevel,
+            mlAnomalyFactors: $mlFactors
         );
     }
 
@@ -183,14 +231,89 @@ class RiskService
             ],
         ];
 
+        // Telemetry on ML fraud engine status
+        $aiStatus = 'OFFLINE_STANDBY';
+        $aiModel = 'IsolationForest-v1.0';
+        try {
+            $healthUrl = str_replace('/predict/fraud', '/health', config('services.ai.fraud_url', env('AI_FRAUD_URL', 'http://127.0.0.1:8001/health')));
+            $res = Http::timeout(0.4)->get($healthUrl);
+            if ($res->successful()) {
+                $aiStatus = 'ONLINE';
+                $aiModel = $res->json('model_version') ?? $aiModel;
+            }
+        } catch (\Throwable) {
+            // Standby
+        }
+
         return [
             'total_evaluated' => $totalTransactions,
             'total_blocked' => $blockedEvents,
             'block_rate_percentage' => $totalTransactions > 0 ? round(($blockedEvents / $totalTransactions) * 100, 2) : 0,
             'active_rules_count' => count($activeRules),
             'rules' => $activeRules,
+            'ml_fraud_engine' => [
+                'status' => $aiStatus,
+                'model' => $aiModel,
+                'algorithm' => 'Unsupervised Isolation Forest Anomaly Detection',
+                'features_count' => 7,
+            ],
             'evaluated_at' => now()->toIso8601String(),
         ];
+    }
+
+    /**
+     * Call the Python FastAPI ML Fraud Detection Microservice with graceful offline fallback.
+     */
+    public function callMlFraudEngine(array $features): ?array
+    {
+        $url = config('services.ai.fraud_url', env('AI_FRAUD_URL', 'http://127.0.0.1:8001/predict/fraud'));
+
+        try {
+            $response = Http::timeout(0.8) // 800ms fast timeout to preserve payment processing SLA
+                ->acceptJson()
+                ->post($url, $features);
+
+            if ($response->successful()) {
+                return $response->json();
+            }
+        } catch (\Throwable $e) {
+            Log::info('ML Fraud Microservice unreachable or timed out; using graceful heuristic fallback.');
+        }
+
+        return null;
+    }
+
+    /**
+     * Check rolling hourly transaction velocity.
+     */
+    protected function checkHourlyVelocity(?string $merchantId, string $email): int
+    {
+        if (empty($email) || empty($merchantId)) {
+            return 0;
+        }
+
+        return Transaction::where('merchant_id', $merchantId)
+            ->whereHas('customer', function ($q) use ($email) {
+                $q->where('email', $email);
+            })
+            ->where('created_at', '>=', Carbon::now()->subHour())
+            ->count();
+    }
+
+    /**
+     * Derive baseline risk factor from card BIN prefix.
+     */
+    protected function getBinRiskFactor(string $cardNumber): float
+    {
+        if (strlen($cardNumber) < 6) {
+            return 0.1;
+        }
+
+        if (str_starts_with($cardNumber, '5000') || str_starts_with($cardNumber, '6000')) {
+            return 0.45;
+        }
+
+        return 0.1;
     }
 
     /**

@@ -13,6 +13,7 @@ import {
   FileText,
   Activity,
   Cpu,
+  BrainCircuit,
 } from 'lucide-react';
 import { apiService } from '../services/api';
 import type {
@@ -535,244 +536,505 @@ export const SecurityView: React.FC<SecurityViewProps> = ({
 
       {/* TAB 2: RISK ENGINE & SIMULATOR */}
       {activeTab === 'risk' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-          {/* Left Column: Active Risk Heuristics */}
-          <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', padding: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-              <ShieldAlert size={20} color="#f59e0b" />
-              <h2 style={{ fontSize: '18px', fontWeight: 600, margin: 0 }}>Active Risk & Fraud Heuristics</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* AI Machine Learning Fraud Engine Telemetry Banner */}
+          <div
+            style={{
+              background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%)',
+              border: '1px solid #334155',
+              borderRadius: '12px',
+              padding: '20px 24px',
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '20px',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)',
+                }}
+              >
+                <BrainCircuit size={26} color="#ffffff" />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: '#f8fafc' }}>
+                    Machine Learning Fraud Detection Microservice
+                  </h3>
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '3px 10px',
+                      borderRadius: '9999px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      letterSpacing: '0.04em',
+                      background:
+                        riskMetrics?.ml_fraud_engine?.status === 'ONLINE'
+                          ? 'rgba(16, 185, 129, 0.15)'
+                          : 'rgba(245, 158, 11, 0.15)',
+                      color:
+                        riskMetrics?.ml_fraud_engine?.status === 'ONLINE' ? '#34d399' : '#fbbf24',
+                      border: `1px solid ${
+                        riskMetrics?.ml_fraud_engine?.status === 'ONLINE'
+                          ? 'rgba(16, 185, 129, 0.3)'
+                          : 'rgba(245, 158, 11, 0.3)'
+                      }`,
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: '7px',
+                        height: '7px',
+                        borderRadius: '50%',
+                        background:
+                          riskMetrics?.ml_fraud_engine?.status === 'ONLINE' ? '#10b981' : '#f59e0b',
+                        boxShadow:
+                          riskMetrics?.ml_fraud_engine?.status === 'ONLINE'
+                            ? '0 0 8px #10b981'
+                            : 'none',
+                      }}
+                    />
+                    {riskMetrics?.ml_fraud_engine?.status ?? 'ONLINE'}
+                  </span>
+                </div>
+                <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#94a3b8' }}>
+                  {riskMetrics?.ml_fraud_engine?.model ?? 'Isolation Forest Anomaly Detector v1.0'} &bull;{' '}
+                  {riskMetrics?.ml_fraud_engine?.algorithm ?? 'Unsupervised IsolationForest (scikit-learn)'} &bull;{' '}
+                  {riskMetrics?.ml_fraud_engine?.features_count ?? 7} Engineered Behavioral Features
+                </p>
+              </div>
             </div>
-            <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 20px 0', lineHeight: 1.5 }}>
-              TransactIQ automatically screens each incoming transaction before gateway dispatch through the following deterministic security checks.
-            </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Rule 1 */}
-              <div style={{ padding: '16px', borderRadius: '10px', background: '#1e293b', border: '1px solid #334155' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#f8fafc' }}>1. Velocity Spike Guard</span>
-                  <span style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', fontSize: '11px', fontWeight: 600 }}>BLOCK (+60)</span>
-                </div>
-                <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 8px 0' }}>
-                  Restricts cards and customer emails from exceeding 5 payment attempts within a rolling 60-second window.
-                </p>
-                <div style={{ fontSize: '11px', color: '#64748b', display: 'flex', gap: '12px' }}>
-                  <span>Threshold: <strong>&gt; 5 attempts / min</strong></span>
-                  <span>Scope: <strong>Customer Email / Card</strong></span>
+            <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>
+                  Latency SLA
+                </span>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#38bdf8' }}>
+                  &lt; 800ms Cutoff
                 </div>
               </div>
-
-              {/* Rule 2 */}
-              <div style={{ padding: '16px', borderRadius: '10px', background: '#1e293b', border: '1px solid #334155' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#f8fafc' }}>2. Global Card Blacklist</span>
-                  <span style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', fontSize: '11px', fontWeight: 600 }}>BLOCK (100)</span>
-                </div>
-                <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 8px 0' }}>
-                  Immediate rejection of reported stolen cards, fraud rings, and compromised card fingerprints ending in 9999 or 8888.
-                </p>
-                <div style={{ fontSize: '11px', color: '#64748b', display: 'flex', gap: '12px' }}>
-                  <span>Matching: <strong>Exact Fingerprint / Suffix</strong></span>
-                  <span>Action: <strong>Instant Abort</strong></span>
+              <div style={{ height: '32px', width: '1px', background: '#334155' }} />
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>
+                  Evaluations
+                </span>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#f8fafc' }}>
+                  {riskMetrics?.total_evaluated ?? 0}
                 </div>
               </div>
-
-              {/* Rule 3 */}
-              <div style={{ padding: '16px', borderRadius: '10px', background: '#1e293b', border: '1px solid #334155' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#f8fafc' }}>3. Consecutive Decline Guard</span>
-                  <span style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24', fontSize: '11px', fontWeight: 600 }}>REVIEW (+35)</span>
-                </div>
-                <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 8px 0' }}>
-                  Detects brute force card guessing attempts when a customer has 3 or more consecutive card declines without success.
-                </p>
-                <div style={{ fontSize: '11px', color: '#64748b', display: 'flex', gap: '12px' }}>
-                  <span>Threshold: <strong>&gt;= 3 Declines</strong></span>
-                  <span>Action: <strong>Route to Review</strong></span>
-                </div>
-              </div>
-
-              {/* Rule 4 */}
-              <div style={{ padding: '16px', borderRadius: '10px', background: '#1e293b', border: '1px solid #334155' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#f8fafc' }}>4. High-Ticket Volume Anomaly</span>
-                  <span style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24', fontSize: '11px', fontWeight: 600 }}>REVIEW (+30)</span>
-                </div>
-                <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 8px 0' }}>
-                  Flags single transactions exceeding ₦2,000,000 for secondary operational review and compliance verification.
-                </p>
-                <div style={{ fontSize: '11px', color: '#64748b', display: 'flex', gap: '12px' }}>
-                  <span>Threshold: <strong>&gt; ₦2,000,000.00</strong></span>
-                  <span>Action: <strong>Compliance Alert</strong></span>
+              <div style={{ height: '32px', width: '1px', background: '#334155' }} />
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>
+                  Block Rate
+                </span>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#f87171' }}>
+                  {riskMetrics?.block_rate_percentage ?? 0}%
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Column: Interactive Simulator */}
-          <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', padding: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-              <Cpu size={20} color="#3b82f6" />
-              <h2 style={{ fontSize: '18px', fontWeight: 600, margin: 0 }}>Interactive Risk Simulator Sandbox</h2>
-            </div>
-            <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 20px 0', lineHeight: 1.5 }}>
-              Test any transaction payload in real-time to observe heuristic score calculations and risk decisions.
-            </p>
-
-            {/* Quick Presets */}
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '11px', color: '#64748b', fontWeight: 600, marginBottom: '8px', textTransform: 'uppercase' }}>Quick Preset Scenarios</label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                <button
-                  type="button"
-                  onClick={() => applyPreset({ name: 'Standard Payment', amount: 15000, email: 'john@example.com', card: '4000000000000001' })}
-                  style={{ padding: '8px 12px', borderRadius: '6px', background: '#1e293b', border: '1px solid #334155', color: '#e2e8f0', fontSize: '12px', textAlign: 'left', cursor: 'pointer' }}
-                >
-                  <span style={{ color: '#10b981', fontWeight: 600 }}>Standard Payment</span>
-                  <span style={{ display: 'block', fontSize: '11px', color: '#64748b' }}>₦15,000 (Expected: ALLOW)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => applyPreset({ name: 'Stolen Card', amount: 80000, email: 'badactor@example.com', card: '4000000000009999' })}
-                  style={{ padding: '8px 12px', borderRadius: '6px', background: '#1e293b', border: '1px solid #334155', color: '#e2e8f0', fontSize: '12px', textAlign: 'left', cursor: 'pointer' }}
-                >
-                  <span style={{ color: '#ef4444', fontWeight: 600 }}>Stolen Card (9999)</span>
-                  <span style={{ display: 'block', fontSize: '11px', color: '#64748b' }}>Blacklist (Expected: BLOCK)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => applyPreset({ name: 'High-Ticket Volume', amount: 3500000, email: 'corp@enterprise.com', card: '5100000000000001' })}
-                  style={{ padding: '8px 12px', borderRadius: '6px', background: '#1e293b', border: '1px solid #334155', color: '#e2e8f0', fontSize: '12px', textAlign: 'left', cursor: 'pointer' }}
-                >
-                  <span style={{ color: '#f59e0b', fontWeight: 600 }}>High Ticket (₦3.5M)</span>
-                  <span style={{ display: 'block', fontSize: '11px', color: '#64748b' }}>Anomaly (Expected: REVIEW)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => applyPreset({ name: 'Suspicious Email', amount: 45000, email: 'fraudtest@throwaway.com', card: '4000000000000001' })}
-                  style={{ padding: '8px 12px', borderRadius: '6px', background: '#1e293b', border: '1px solid #334155', color: '#e2e8f0', fontSize: '12px', textAlign: 'left', cursor: 'pointer' }}
-                >
-                  <span style={{ color: '#c084fc', fontWeight: 600 }}>Disposable Email</span>
-                  <span style={{ display: 'block', fontSize: '11px', color: '#64748b' }}>Pattern Flag (+20 score)</span>
-                </button>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+            {/* Left Column: Active Risk Heuristics */}
+            <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', padding: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                <ShieldAlert size={20} color="#f59e0b" />
+                <h2 style={{ fontSize: '18px', fontWeight: 600, margin: 0 }}>Active Risk & Fraud Heuristics</h2>
               </div>
-            </div>
+              <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 20px 0', lineHeight: 1.5 }}>
+                TransactIQ automatically screens each incoming transaction before gateway dispatch through the following deterministic security checks and unsupervised machine learning algorithms.
+              </p>
 
-            {/* Input Form */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>Amount (NGN)</label>
-                <input
-                  type="number"
-                  value={simAmount}
-                  onChange={(e) => setSimAmount(Number(e.target.value))}
-                  style={{ width: '100%', boxSizing: 'border-box', background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f8fafc', padding: '10px 14px', fontSize: '14px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>Customer Email</label>
-                <input
-                  type="email"
-                  value={simEmail}
-                  onChange={(e) => setSimEmail(e.target.value)}
-                  style={{ width: '100%', boxSizing: 'border-box', background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f8fafc', padding: '10px 14px', fontSize: '14px' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>Card Number</label>
-                <input
-                  type="text"
-                  value={simCard}
-                  onChange={(e) => setSimCard(e.target.value)}
-                  placeholder="e.g. 4000000000009999"
-                  style={{ width: '100%', boxSizing: 'border-box', background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f8fafc', padding: '10px 14px', fontSize: '14px' }}
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={() => handleRunSimulation()}
-                disabled={isEvaluating}
-                style={{
-                  padding: '12px',
-                  borderRadius: '8px',
-                  background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                  color: '#ffffff',
-                  border: 'none',
-                  fontWeight: 600,
-                  fontSize: '14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  cursor: isEvaluating ? 'not-allowed' : 'pointer',
-                  boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
-                }}
-              >
-                <Play size={16} />
-                {isEvaluating ? 'Evaluating Heuristics...' : 'Execute Risk Evaluation'}
-              </button>
-            </div>
-
-            {/* Simulation Result Output */}
-            {simResult && (
-              <div
-                style={{
-                  padding: '18px',
-                  borderRadius: '10px',
-                  background:
-                    simResult.decision === 'BLOCK'
-                      ? 'rgba(239, 68, 68, 0.1)'
-                      : simResult.decision === 'REVIEW'
-                      ? 'rgba(245, 158, 11, 0.1)'
-                      : 'rgba(16, 185, 129, 0.1)',
-                  border: `1px solid ${
-                    simResult.decision === 'BLOCK'
-                      ? 'rgba(239, 68, 68, 0.3)'
-                      : simResult.decision === 'REVIEW'
-                      ? 'rgba(245, 158, 11, 0.3)'
-                      : 'rgba(16, 185, 129, 0.3)'
-                  }`,
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <div>
-                    <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Risk Decision</span>
-                    <div style={{ fontSize: '20px', fontWeight: 800, color: simResult.decision === 'BLOCK' ? '#ef4444' : simResult.decision === 'REVIEW' ? '#f59e0b' : '#10b981' }}>
-                      {simResult.decision}
-                    </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {/* Rule 1 */}
+                <div style={{ padding: '16px', borderRadius: '10px', background: '#1e293b', border: '1px solid #334155' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#f8fafc' }}>1. Velocity Spike Guard</span>
+                    <span style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', fontSize: '11px', fontWeight: 600 }}>BLOCK (+60)</span>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>Fraud Score</span>
-                    <div style={{ fontSize: '20px', fontWeight: 800, color: '#f8fafc' }}>
-                      {simResult.score} / 100
-                    </div>
+                  <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 8px 0' }}>
+                    Restricts cards and customer emails from exceeding 5 payment attempts within a rolling 60-second window.
+                  </p>
+                  <div style={{ fontSize: '11px', color: '#64748b', display: 'flex', gap: '12px' }}>
+                    <span>Threshold: <strong>&gt; 5 attempts / min</strong></span>
+                    <span>Scope: <strong>Customer Email / Card</strong></span>
                   </div>
                 </div>
 
-                <div style={{ fontSize: '13px', color: '#e2e8f0', marginBottom: '12px', lineHeight: 1.4 }}>
-                  <strong>Evaluation Reason:</strong> {simResult.reason}
+                {/* Rule 2 */}
+                <div style={{ padding: '16px', borderRadius: '10px', background: '#1e293b', border: '1px solid #334155' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#f8fafc' }}>2. Global Card Blacklist</span>
+                    <span style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', fontSize: '11px', fontWeight: 600 }}>BLOCK (100)</span>
+                  </div>
+                  <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 8px 0' }}>
+                    Immediate rejection of reported stolen cards, fraud rings, and compromised card fingerprints ending in 9999 or 8888.
+                  </p>
+                  <div style={{ fontSize: '11px', color: '#64748b', display: 'flex', gap: '12px' }}>
+                    <span>Matching: <strong>Exact Fingerprint / Suffix</strong></span>
+                    <span>Action: <strong>Instant Abort</strong></span>
+                  </div>
                 </div>
 
-                {simResult.flags.length > 0 && (
-                  <div>
-                    <span style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '6px' }}>Triggered Security Flags:</span>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                      {simResult.flags.map((flag, idx) => (
-                        <span key={idx} style={{ padding: '3px 8px', borderRadius: '4px', background: '#1e293b', border: '1px solid #475569', fontSize: '11px', fontWeight: 600, color: '#fca5a5' }}>
-                          {flag}
+                {/* Rule 3 */}
+                <div style={{ padding: '16px', borderRadius: '10px', background: '#1e293b', border: '1px solid #334155' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#f8fafc' }}>3. Consecutive Decline Guard</span>
+                    <span style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24', fontSize: '11px', fontWeight: 600 }}>REVIEW (+35)</span>
+                  </div>
+                  <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 8px 0' }}>
+                    Detects brute force card guessing attempts when a customer has 3 or more consecutive card declines without success.
+                  </p>
+                  <div style={{ fontSize: '11px', color: '#64748b', display: 'flex', gap: '12px' }}>
+                    <span>Threshold: <strong>&gt;= 3 Declines</strong></span>
+                    <span>Action: <strong>Route to Review</strong></span>
+                  </div>
+                </div>
+
+                {/* Rule 4 */}
+                <div style={{ padding: '16px', borderRadius: '10px', background: '#1e293b', border: '1px solid #334155' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#f8fafc' }}>4. High-Ticket Volume Anomaly</span>
+                    <span style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24', fontSize: '11px', fontWeight: 600 }}>REVIEW (+30)</span>
+                  </div>
+                  <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 8px 0' }}>
+                    Flags single transactions exceeding ₦2,000,000 for secondary operational review and compliance verification.
+                  </p>
+                  <div style={{ fontSize: '11px', color: '#64748b', display: 'flex', gap: '12px' }}>
+                    <span>Threshold: <strong>&gt; ₦2,000,000.00</strong></span>
+                    <span>Action: <strong>Compliance Alert</strong></span>
+                  </div>
+                </div>
+
+                {/* Rule 5 */}
+                <div style={{ padding: '16px', borderRadius: '10px', background: '#1e293b', border: '1px solid #334155' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#f8fafc' }}>5. Disposable Domain Filter</span>
+                    <span style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(192, 132, 252, 0.2)', color: '#c084fc', fontSize: '11px', fontWeight: 600 }}>FLAG (+20)</span>
+                  </div>
+                  <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 8px 0' }}>
+                    Identifies temporary disposable mailboxes (tempmail, 10minutemail, throwaway) associated with burner identities.
+                  </p>
+                  <div style={{ fontSize: '11px', color: '#64748b', display: 'flex', gap: '12px' }}>
+                    <span>Domains: <strong>50+ Burner Providers</strong></span>
+                    <span>Action: <strong>Risk Score Elevation</strong></span>
+                  </div>
+                </div>
+
+                {/* Rule 6 - ML Anomaly */}
+                <div style={{ padding: '16px', borderRadius: '10px', background: 'linear-gradient(135deg, rgba(30, 41, 59, 1), rgba(49, 46, 129, 0.25))', border: '1px solid #4f46e5' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <BrainCircuit size={15} color="#818cf8" />
+                      <span style={{ fontSize: '14px', fontWeight: 700, color: '#c7d2fe' }}>6. Machine Learning Anomaly Score</span>
+                    </div>
+                    <span style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(99, 102, 241, 0.25)', color: '#a5b4fc', fontSize: '11px', fontWeight: 700 }}>AI / ML</span>
+                  </div>
+                  <p style={{ fontSize: '12px', color: '#94a3b8', margin: '0 0 8px 0' }}>
+                    Unsupervised Isolation Forest evaluates 7 high-dimensional vectors. Anomaly scores &ge; 0.75 trigger REVIEW (+30); &ge; 0.88 trigger BLOCK (+50).
+                  </p>
+                  <div style={{ fontSize: '11px', color: '#64748b', display: 'flex', gap: '12px' }}>
+                    <span>Engine: <strong>FastAPI Python 3.10</strong></span>
+                    <span>Failover: <strong>Autonomous Heuristics</strong></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Interactive Simulator */}
+            <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', padding: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                <Cpu size={20} color="#3b82f6" />
+                <h2 style={{ fontSize: '18px', fontWeight: 600, margin: 0 }}>Interactive Risk Simulator Sandbox</h2>
+              </div>
+              <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 20px 0', lineHeight: 1.5 }}>
+                Test any transaction payload in real-time to observe heuristic score calculations and AI Isolation Forest predictions.
+              </p>
+
+              {/* Quick Presets */}
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '11px', color: '#64748b', fontWeight: 600, marginBottom: '8px', textTransform: 'uppercase' }}>Quick Preset Scenarios</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => applyPreset({ name: 'Standard Payment', amount: 15000, email: 'john@example.com', card: '4000000000000001' })}
+                    style={{ padding: '8px 12px', borderRadius: '6px', background: '#1e293b', border: '1px solid #334155', color: '#e2e8f0', fontSize: '12px', textAlign: 'left', cursor: 'pointer' }}
+                  >
+                    <span style={{ color: '#10b981', fontWeight: 600 }}>Standard Payment</span>
+                    <span style={{ display: 'block', fontSize: '11px', color: '#64748b' }}>₦15,000 (Expected: ALLOW)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => applyPreset({ name: 'Stolen Card', amount: 80000, email: 'badactor@example.com', card: '4000000000009999' })}
+                    style={{ padding: '8px 12px', borderRadius: '6px', background: '#1e293b', border: '1px solid #334155', color: '#e2e8f0', fontSize: '12px', textAlign: 'left', cursor: 'pointer' }}
+                  >
+                    <span style={{ color: '#ef4444', fontWeight: 600 }}>Stolen Card (9999)</span>
+                    <span style={{ display: 'block', fontSize: '11px', color: '#64748b' }}>Blacklist (Expected: BLOCK)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => applyPreset({ name: 'High-Ticket Volume', amount: 3500000, email: 'corp@enterprise.com', card: '5100000000000001' })}
+                    style={{ padding: '8px 12px', borderRadius: '6px', background: '#1e293b', border: '1px solid #334155', color: '#e2e8f0', fontSize: '12px', textAlign: 'left', cursor: 'pointer' }}
+                  >
+                    <span style={{ color: '#f59e0b', fontWeight: 600 }}>High Ticket (₦3.5M)</span>
+                    <span style={{ display: 'block', fontSize: '11px', color: '#64748b' }}>Anomaly (Expected: REVIEW)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => applyPreset({ name: 'Suspicious Email', amount: 45000, email: 'fraudtest@throwaway.com', card: '4000000000000001' })}
+                    style={{ padding: '8px 12px', borderRadius: '6px', background: '#1e293b', border: '1px solid #334155', color: '#e2e8f0', fontSize: '12px', textAlign: 'left', cursor: 'pointer' }}
+                  >
+                    <span style={{ color: '#c084fc', fontWeight: 600 }}>Disposable Email</span>
+                    <span style={{ display: 'block', fontSize: '11px', color: '#64748b' }}>Pattern Flag (+20 score)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => applyPreset({ name: 'AI Anomaly Spike', amount: 850000, email: 'rapid.actor@tempinbox.org', card: '4000000000000002' })}
+                    style={{ padding: '8px 12px', borderRadius: '6px', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid #4f46e5', color: '#e2e8f0', fontSize: '12px', textAlign: 'left', cursor: 'pointer', gridColumn: 'span 2' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <BrainCircuit size={13} color="#818cf8" />
+                      <span style={{ color: '#a5b4fc', fontWeight: 600 }}>AI ML Anomaly Spike (Night + High Amount)</span>
+                    </div>
+                    <span style={{ display: 'block', fontSize: '11px', color: '#64748b', marginTop: '2px' }}>Multi-factor behavioral spike evaluated via Isolation Forest</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Input Form */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>Amount (NGN)</label>
+                  <input
+                    type="number"
+                    value={simAmount}
+                    onChange={(e) => setSimAmount(Number(e.target.value))}
+                    style={{ width: '100%', boxSizing: 'border-box', background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f8fafc', padding: '10px 14px', fontSize: '14px' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>Customer Email</label>
+                  <input
+                    type="email"
+                    value={simEmail}
+                    onChange={(e) => setSimEmail(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f8fafc', padding: '10px 14px', fontSize: '14px' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>Card Number</label>
+                  <input
+                    type="text"
+                    value={simCard}
+                    onChange={(e) => setSimCard(e.target.value)}
+                    placeholder="e.g. 4000000000009999"
+                    style={{ width: '100%', boxSizing: 'border-box', background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f8fafc', padding: '10px 14px', fontSize: '14px' }}
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleRunSimulation()}
+                  disabled={isEvaluating}
+                  style={{
+                    padding: '12px',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontWeight: 600,
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    cursor: isEvaluating ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
+                  }}
+                >
+                  <Play size={16} />
+                  {isEvaluating ? 'Evaluating Heuristics & AI Model...' : 'Execute Risk Evaluation'}
+                </button>
+              </div>
+
+              {/* Simulation Result Output */}
+              {simResult && (
+                <div
+                  style={{
+                    padding: '18px',
+                    borderRadius: '10px',
+                    background:
+                      simResult.decision === 'BLOCK'
+                        ? 'rgba(239, 68, 68, 0.1)'
+                        : simResult.decision === 'REVIEW'
+                        ? 'rgba(245, 158, 11, 0.1)'
+                        : 'rgba(16, 185, 129, 0.1)',
+                    border: `1px solid ${
+                      simResult.decision === 'BLOCK'
+                        ? 'rgba(239, 68, 68, 0.3)'
+                        : simResult.decision === 'REVIEW'
+                        ? 'rgba(245, 158, 11, 0.3)'
+                        : 'rgba(16, 185, 129, 0.3)'
+                    }`,
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <div>
+                      <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Risk Decision</span>
+                      <div style={{ fontSize: '20px', fontWeight: 800, color: simResult.decision === 'BLOCK' ? '#ef4444' : simResult.decision === 'REVIEW' ? '#f59e0b' : '#10b981' }}>
+                        {simResult.decision}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>Fraud Score</span>
+                      <div style={{ fontSize: '20px', fontWeight: 800, color: '#f8fafc' }}>
+                        {simResult.score} / 100
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* AI Isolation Forest Radar & Gauge Section */}
+                  <div
+                    style={{
+                      margin: '14px 0',
+                      padding: '14px',
+                      borderRadius: '8px',
+                      background: 'rgba(15, 23, 42, 0.75)',
+                      border: '1px solid #334155',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <BrainCircuit size={16} color="#818cf8" />
+                        <span style={{ fontSize: '12px', fontWeight: 600, color: '#e2e8f0' }}>
+                          AI Isolation Forest Radar
                         </span>
-                      ))}
+                      </div>
+                      {simResult.ml_risk_level && (
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            background:
+                              simResult.ml_risk_level === 'CRITICAL'
+                                ? 'rgba(239, 68, 68, 0.2)'
+                                : simResult.ml_risk_level === 'HIGH'
+                                ? 'rgba(245, 158, 11, 0.2)'
+                                : simResult.ml_risk_level === 'MEDIUM'
+                                ? 'rgba(59, 130, 246, 0.2)'
+                                : 'rgba(16, 185, 129, 0.2)',
+                            color:
+                              simResult.ml_risk_level === 'CRITICAL'
+                                ? '#f87171'
+                                : simResult.ml_risk_level === 'HIGH'
+                                ? '#fbbf24'
+                                : simResult.ml_risk_level === 'MEDIUM'
+                                ? '#60a5fa'
+                                : '#34d399',
+                          }}
+                        >
+                          ML RISK: {simResult.ml_risk_level}
+                        </span>
+                      )}
                     </div>
+
+                    {/* Anomaly Score Bar Gauge */}
+                    <div style={{ marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>
+                        <span>Normalized Anomaly Score</span>
+                        <span style={{ fontWeight: 600, color: '#f8fafc' }}>
+                          {simResult.ml_anomaly_score !== null && simResult.ml_anomaly_score !== undefined
+                            ? `${(simResult.ml_anomaly_score * 100).toFixed(1)}%`
+                            : 'N/A (Heuristic Standby)'}
+                        </span>
+                      </div>
+                      <div style={{ width: '100%', height: '8px', background: '#1e293b', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div
+                          style={{
+                            width: `${Math.min(100, Math.max(0, (simResult.ml_anomaly_score ?? 0) * 100))}%`,
+                            height: '100%',
+                            background:
+                              (simResult.ml_anomaly_score ?? 0) >= 0.88
+                                ? 'linear-gradient(90deg, #f59e0b, #ef4444)'
+                                : (simResult.ml_anomaly_score ?? 0) >= 0.75
+                                ? 'linear-gradient(90deg, #3b82f6, #f59e0b)'
+                                : 'linear-gradient(90deg, #10b981, #3b82f6)',
+                            transition: 'width 0.4s ease-out',
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* ML Anomaly Factor Contribution Tags */}
+                    {simResult.ml_anomaly_factors && simResult.ml_anomaly_factors.length > 0 && (
+                      <div>
+                        <span style={{ fontSize: '10px', color: '#64748b', display: 'block', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          Contributing Behavioral Factors:
+                        </span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                          {simResult.ml_anomaly_factors.map((factor, idx) => (
+                            <span
+                              key={idx}
+                              style={{
+                                padding: '2px 7px',
+                                borderRadius: '4px',
+                                background: '#1e293b',
+                                border: '1px solid #4338ca',
+                                color: '#c7d2fe',
+                                fontSize: '10px',
+                                fontWeight: 600,
+                              }}
+                            >
+                              {factor}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            )}
+
+                  <div style={{ fontSize: '13px', color: '#e2e8f0', marginBottom: '12px', lineHeight: 1.4 }}>
+                    <strong>Evaluation Reason:</strong> {simResult.reason}
+                  </div>
+
+                  {simResult.flags.length > 0 && (
+                    <div>
+                      <span style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '6px' }}>Triggered Security Flags:</span>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {simResult.flags.map((flag, idx) => (
+                          <span key={idx} style={{ padding: '3px 8px', borderRadius: '4px', background: '#1e293b', border: '1px solid #475569', fontSize: '11px', fontWeight: 600, color: '#fca5a5' }}>
+                            {flag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -66,6 +66,7 @@ services:
       REDIS_PORT: 6379
       QUEUE_CONNECTION: redis
       CACHE_STORE: redis
+      AI_FRAUD_URL: http://ai-service:8001/predict/fraud
     volumes:
       - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
     depends_on:
@@ -141,6 +142,25 @@ services:
       - backend-web
     networks:
       - transactiq-network
+
+  # ----------------------------------------------------------------------------
+  # 7. AI Fraud Detection Microservice (FastAPI + scikit-learn Isolation Forest)
+  # ----------------------------------------------------------------------------
+  ai-service:
+    build:
+      context: ./backend-ai
+      dockerfile: Dockerfile
+    container_name: transactiq-ai-service
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    networks:
+      - transactiq-network
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8001/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 # ------------------------------------------------------------------------------
 # Persistent Docker Volumes

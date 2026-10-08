@@ -13,7 +13,10 @@ class RiskEvaluationResult
         public string $decision,
         public array $flags = [],
         public ?string $reason = null,
-        public array $metadata = []
+        public array $metadata = [],
+        public ?float $mlAnomalyScore = null,
+        public ?string $mlRiskLevel = null,
+        public array $mlAnomalyFactors = []
     ) {}
 
     public function isAllowed(): bool
@@ -43,6 +46,9 @@ class RiskEvaluationResult
             'decision' => $this->decision,
             'flags' => $this->flags,
             'reason' => $this->getReason(),
+            'ml_anomaly_score' => $this->mlAnomalyScore,
+            'ml_risk_level' => $this->mlRiskLevel,
+            'ml_anomaly_factors' => $this->mlAnomalyFactors,
             'metadata' => $this->metadata,
         ];
     }
